@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import * as React from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Card, CardHeader, CardTitle, CardBody, CardFooter } from "@/components/ui/Card";
@@ -7,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 // ---- Icons ----
 
@@ -353,6 +357,21 @@ export default function DashboardPage() {
   const [zone, setZone] = React.useState("");
   const [origin, setOrigin] = React.useState("");
   const [showEmptyState, setShowEmptyState] = React.useState(false);
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    try {
+      setIsSigningOut(true);
+      await supabase.auth.signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("[v0] Sign out error:", error);
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   const canOptimize = file !== null && zone !== "";
 
@@ -385,13 +404,24 @@ export default function DashboardPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           {/* Welcome header */}
-          <header className="mb-8">
-            <h1 className="text-xl sm:text-2xl font-sans font-semibold text-text-primary">
-              {getGreeting()}, {userData.companyName}
-            </h1>
-            <p className="text-sm text-text-muted mt-1">
-              {userData.usedRoutes} rutas usadas este mes de {userData.totalRoutes}
-            </p>
+          <header className="mb-8 flex items-start justify-between">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-sans font-semibold text-text-primary">
+                {getGreeting()}, {userData.companyName}
+              </h1>
+              <p className="text-sm text-text-muted mt-1">
+                {userData.usedRoutes} rutas usadas este mes de {userData.totalRoutes}
+              </p>
+            </div>
+            <Button
+              onClick={handleSignOut}
+              loading={isSigningOut}
+              disabled={isSigningOut}
+              variant="ghost"
+              size="md"
+            >
+              Cerrar sesión
+            </Button>
           </header>
 
           {/* Layout: Main + Sidebar widget */}

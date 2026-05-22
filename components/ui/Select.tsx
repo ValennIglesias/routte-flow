@@ -12,6 +12,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   options: SelectOption[];
   placeholder?: string;
+  iconLeft?: React.ReactNode; // ✅ agregado
 }
 
 export function Select({
@@ -22,6 +23,7 @@ export function Select({
   placeholder,
   id,
   className = "",
+  iconLeft, // ✅ agregado
   ...props
 }: SelectProps) {
   const selectId = id ?? label?.toLowerCase().replace(/\s+/g, "-");
@@ -37,11 +39,18 @@ export function Select({
         </label>
       )}
       <div className="relative flex items-center">
+        {/* ✅ ícono izquierdo opcional */}
+        {iconLeft && (
+          <span className="pointer-events-none absolute left-2.5 flex items-center text-text-muted">
+            {iconLeft}
+          </span>
+        )}
         <select
           id={selectId}
           className={[
             "h-9 w-full appearance-none rounded-md bg-bg-surface border font-sans text-sm text-text-primary",
-            "pl-3 pr-8",
+            iconLeft ? "pl-8" : "pl-3", // ✅ padding dinámico
+            "pr-8",
             "transition-colors duration-150",
             "focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/60",
             "disabled:opacity-40 disabled:cursor-not-allowed",
@@ -63,15 +72,9 @@ export function Select({
             </option>
           ))}
         </select>
-        {/* Chevron icon */}
+        {/* Chevron */}
         <span className="pointer-events-none absolute right-2.5 flex items-center text-text-muted">
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 16 16"
-            fill="none"
-            aria-hidden="true"
-          >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
               d="M4 6l4 4 4-4"
               stroke="currentColor"

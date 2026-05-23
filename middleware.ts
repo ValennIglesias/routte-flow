@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for non-app routes
-  if (pathname.startsWith("/_next") || pathname.startsWith("/api")) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/api")||pathname.startsWith("/auth") ) {
     return NextResponse.next();
   }
 

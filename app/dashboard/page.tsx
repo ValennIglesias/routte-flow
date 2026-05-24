@@ -276,22 +276,30 @@ function DepotSelector({ onDepotChange }: DepotSelectorProps) {
         </div>
       ) : null}
 
-      {/* "+ Agregar" button when depots exist but below limit */}
-      {depots.length > 0 && !showForm && (
-        <div className="relative group w-fit">
+      {/* Plan limit notice — shown when at depot limit */}
+      {atLimit && !showForm && (
+        <div className="flex items-start gap-2.5 rounded-md border border-accent/30 bg-accent/10 px-3 py-2.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mt-0.5 shrink-0 text-accent">
+            <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <p className="text-xs leading-relaxed text-accent">
+            Estás en el plan Starter · Solo podés guardar 1 depósito.{" "}
+            <span className="font-semibold">Mejorá tu plan</span> para agregar más.
+          </p>
+        </div>
+      )}
+
+      {/* "+ Agregar" button when depots exist and below limit */}
+      {depots.length > 0 && !showForm && !atLimit && (
+        <div className="w-fit">
           <Button
             variant="ghost"
             size="sm"
-            disabled={atLimit}
-            onClick={() => !atLimit && setShowForm(true)}
+            onClick={() => setShowForm(true)}
           >
             + Agregar depósito
           </Button>
-          {atLimit && (
-            <span className="pointer-events-none absolute bottom-full left-0 mb-1.5 whitespace-nowrap rounded bg-bg-elevated px-2 py-1 text-xs text-text-muted opacity-0 shadow group-hover:opacity-100 transition-opacity border border-border">
-              Mejorá tu plan para agregar más depósitos
-            </span>
-          )}
         </div>
       )}
 

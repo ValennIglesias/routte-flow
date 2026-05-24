@@ -19,9 +19,12 @@ interface Stop {
 
 async function geocode(
   address: string,
-  localidad: string
+  localidad?: string
 ): Promise<{ lat: number; lng: number } | null> {
-  const query = encodeURIComponent(`${address},${localidad},Argentina`);
+  const fullAddress = localidad 
+    ? `${address}, ${localidad}, Argentina`
+    : `${address}, Argentina`;
+  const query = encodeURIComponent(fullAddress);
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${GOOGLE_MAPS_API_KEY}`;
 
   const res = await fetch(url);

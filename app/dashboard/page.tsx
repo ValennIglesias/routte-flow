@@ -358,6 +358,8 @@ export default function DashboardPage() {
   const [origin, setOrigin] = React.useState("");
   const [showEmptyState, setShowEmptyState] = React.useState(false);
   const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const [isOptimizing, setIsOptimizing] = React.useState(false);
+  const [optimizeError, setOptimizeError] = React.useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -373,11 +375,45 @@ export default function DashboardPage() {
     }
   };
 
-  const canOptimize = file !== null && zone !== "";
+  const canOptimize = file !== null && zone !== "" && origin !== "";
 
-  const handleOptimize = () => {
-    // In production, this would trigger route optimization
-    console.log("Optimizing route:", { file: file?.name, zone, origin });
+  const handleOptimize = async () => {
+    if (!file || !zone || !origin) {
+      setOptimizeError("Por favor completá todos los campos: archivo, zona y depósito de origen.");
+      return;
+    }
+
+    setIsOptimizing(true);
+    setOptimizeError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("zone", zone);
+      formData.append("depot", origin);
+
+      const response = await fetch("/api/optimize-route", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al optimizar la ruta");
+      }
+
+      // Store optimized route data in sessionStorage
+      sessionStorage.setItem("optimizedRoute", JSON.stringify(data));
+
+      // Redirect to preview page
+      router.push("/ruta/preview");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido al optimizar la ruta";
+      setOptimizeError(errorMessage);
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   // User data (mock)
@@ -434,6 +470,13 @@ export default function DashboardPage() {
                   <CardTitle as="h2">Nueva ruta</CardTitle>
                 </CardHeader>
                 <CardBody className="flex flex-col gap-5">
+                  {/* Error banner */}
+                  {optimizeError && (
+                    <div className="rounded-md bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
+                      {optimizeError}
+                    </div>
+                  )}
+
                   {/* Dropzone */}
                   <Dropzone file={file} onFileSelect={setFile} />
 
@@ -458,7 +501,8 @@ export default function DashboardPage() {
                 </CardBody>
                 <CardFooter className="justify-end">
                   <Button
-                    disabled={!canOptimize}
+                    disabled={!canOptimize || isOptimizing}
+                    loading={isOptimizing}
                     onClick={handleOptimize}
                     iconRight={<IconArrowRight />}
                   >

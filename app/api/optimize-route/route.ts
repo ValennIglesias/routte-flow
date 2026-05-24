@@ -69,6 +69,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Validate depot address contains a number
+  if (!/\d/.test(depot)) {
+    return NextResponse.json(
+      { error: "La dirección del depósito debe incluir una altura numérica." },
+      { status: 400 }
+    );
+  }
+
   // Validate file extension
   const fileName = file.name.toLowerCase();
   if (!fileName.endsWith(".csv") && !fileName.endsWith(".xls") && !fileName.endsWith(".xlsx")) {

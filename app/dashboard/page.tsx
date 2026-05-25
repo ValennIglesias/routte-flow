@@ -482,13 +482,16 @@ function Dropzone({ file, onFileSelect }: DropzoneProps) {
 
 const STARTER_ROUTE_LIMIT = 15;
 
+type PlanType = "starter" | "pro" | "business";
+
 interface CreditsWidgetProps {
   used: number;
   total: number;
   isAtLimit: boolean;
+  onUpgradeClick: () => void;
 }
 
-function CreditsWidget({ used, total, isAtLimit }: CreditsWidgetProps) {
+function CreditsWidget({ used, total, isAtLimit, onUpgradeClick }: CreditsWidgetProps) {
   const percentage = Math.min((used / total) * 100, 100);
   const isNearLimit = percentage >= 80;
 
@@ -520,11 +523,201 @@ function CreditsWidget({ used, total, isAtLimit }: CreditsWidgetProps) {
         </p>
       </CardBody>
       <CardFooter>
-        <Button variant="ghost" size="sm" className="w-full">
+        <Button variant="ghost" size="sm" className="w-full" onClick={onUpgradeClick}>
           Mejorar plan
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+// ---- Plans modal ----
+
+interface PlansModalProps {
+  currentPlan: PlanType;
+  onClose: () => void;
+}
+
+function PlansModal({ currentPlan, onClose }: PlansModalProps) {
+  const [loadingPlan, setLoadingPlan] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleSelectPlan = async (planId: "pro" | "business") => {
+    setLoadingPlan(planId);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/suscripcion/crear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan_id: planId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al crear la suscripción");
+      }
+
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      setError(message);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const plans = [
+    {
+      id: "starter" as const,
+      name: "Starter",
+      price: 0,
+      routes: 15,
+      features: ["15 rutas por mes", "Exportar a Google Maps", "Soporte por email"],
+    },
+    {
+      id: "pro" as const,
+      name: "Pro",
+      price: 25000,
+      routes: 40,
+      highlighted: true,
+      features: ["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"],
+    },
+    {
+      id: "business" as const,
+      name: "Business",
+      price: 60000,
+      routes: 120,
+      features: ["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"],
+    },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Elegir plan"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-4xl rounded-xl border border-border bg-bg-base shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-text-primary">Elegí tu plan</h2>
+            <p className="text-sm text-text-muted mt-1">Simple. Sin sorpresas. Pagás solo por lo que usás.</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-text-muted hover:bg-bg-surface hover:text-text-primary transition-colors"
+            aria-label="Cerrar"
+          >
+            <IconX size={18} />
+          </button>
+        </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="mb-4 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+            {error}
+          </div>
+        )}
+
+        {/* Plans grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {plans.map((plan) => {
+            const isCurrent = plan.id === currentPlan;
+            const isLoading = loadingPlan === plan.id;
+
+            return (
+              <Card
+                key={plan.id}
+                padding="lg"
+                className={[
+                  "relative flex flex-col",
+                  plan.highlighted ? "border-accent ring-1 ring-accent/20" : "",
+                ].join(" ")}
+              >
+                {plan.highlighted && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-accent text-bg-base text-xs font-semibold">
+                      Popular
+                    </span>
+                  </div>
+                )}
+
+                {isCurrent && (
+                  <div className="absolute top-3 right-3">
+                    <Badge variant="completed">Plan actual</Badge>
+                  </div>
+                )}
+
+                <div className="mb-4">
+                  <h3 className="font-mono text-sm uppercase tracking-wider text-text-muted mb-2">{plan.name}</h3>
+                  <div className="flex items-baseline gap-1">
+                    {plan.price === 0 ? (
+                      <span className="text-2xl font-bold">Gratis</span>
+                    ) : (
+                      <>
+                        <span className="text-2xl font-bold">${plan.price.toLocaleString("es-AR")}</span>
+                        <span className="text-text-muted text-sm">ARS / mes</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="text-text-muted">Rutas disponibles</span>
+                    <span className="font-mono text-accent">{plan.routes}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-bg-surface overflow-hidden">
+                    <div className="h-full rounded-full bg-accent w-full" />
+                  </div>
+                </div>
+
+                <ul className="flex-1 space-y-2.5 mb-5">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-text-muted">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-success shrink-0 mt-0.5">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                {plan.id === "starter" ? (
+                  <div className="text-center py-2 text-sm text-text-muted">
+                    {isCurrent ? "Plan gratuito · Activo" : "Plan gratuito"}
+                  </div>
+                ) : (
+                  <Button
+                    variant={plan.highlighted ? "primary" : "ghost"}
+                    className="w-full"
+                    onClick={() => handleSelectPlan(plan.id)}
+                    loading={isLoading}
+                    disabled={isCurrent || isLoading || loadingPlan !== null}
+                  >
+                    {isCurrent ? "Plan actual" : "Elegir plan"}
+                  </Button>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Close button */}
+        <div className="mt-6 flex justify-end">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -647,12 +840,14 @@ export default function DashboardPage() {
   const [isLoadingRoutes, setIsLoadingRoutes] = React.useState(true);
   const [monthlyRouteCount, setMonthlyRouteCount] = React.useState(0);
   const [companyName, setCompanyName] = React.useState("tu empresa");
+  const [currentPlan, setCurrentPlan] = React.useState<PlanType>("starter");
+  const [showPlansModal, setShowPlansModal] = React.useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   const isAtLimit = monthlyRouteCount >= STARTER_ROUTE_LIMIT;
 
-  // Load routes and monthly count from Supabase
+  // Load routes, monthly count, and subscription from Supabase
   React.useEffect(() => {
     const loadData = async () => {
       try {
@@ -673,8 +868,8 @@ export default function DashboardPage() {
         const now = new Date();
         const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-        // Run both queries in parallel
-        const [routesResult, countResult] = await Promise.all([
+        // Run all queries in parallel
+        const [routesResult, countResult, subscriptionResult] = await Promise.all([
           supabase
             .from("rutas")
             .select("id, created_at, zone, total_stops")
@@ -686,13 +881,30 @@ export default function DashboardPage() {
             .select("id", { count: "exact", head: true })
             .eq("user_id", user.id)
             .gte("created_at", firstOfMonth),
+          supabase
+            .from("suscripciones")
+            .select("plan_id, status")
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
         ]);
 
         if (routesResult.error) throw routesResult.error;
         if (countResult.error) throw countResult.error;
+        // subscriptionResult.error is ok if table doesn't exist yet
 
         setRecentRoutes(routesResult.data ?? []);
         setMonthlyRouteCount(countResult.count ?? 0);
+
+        // Set current plan from subscription or default to starter
+        if (subscriptionResult.data?.plan_id) {
+          const planId = subscriptionResult.data.plan_id as PlanType;
+          if (planId === "pro" || planId === "business") {
+            setCurrentPlan(planId);
+          }
+        }
       } catch (err) {
         console.error("[v0] Error loading dashboard data:", err);
       } finally {
@@ -766,6 +978,11 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg-base">
+      {/* Plans modal */}
+      {showPlansModal && (
+        <PlansModal currentPlan={currentPlan} onClose={() => setShowPlansModal(false)} />
+      )}
+
       {/* Sidebar */}
       <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
 
@@ -852,7 +1069,7 @@ export default function DashboardPage() {
             {/* Credits widget - sidebar on desktop, bottom on mobile */}
             <div className="lg:col-span-1">
               <div className="sticky top-6">
-                <CreditsWidget used={monthlyRouteCount} total={STARTER_ROUTE_LIMIT} isAtLimit={isAtLimit} />
+                <CreditsWidget used={monthlyRouteCount} total={STARTER_ROUTE_LIMIT} isAtLimit={isAtLimit} onUpgradeClick={() => setShowPlansModal(true)} />
               </div>
             </div>
           </div>

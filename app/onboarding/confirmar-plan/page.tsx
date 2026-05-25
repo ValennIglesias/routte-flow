@@ -5,6 +5,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Suspense } from "react";
 
 // ---- Types ----
 
@@ -77,7 +78,7 @@ function IconArrowRight({ size = 16 }: { size?: number }) {
 
 // ---- Main page ----
 
-export default function ConfirmarPlanPage() {
+function ConfirmarPlanContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan");
@@ -316,5 +317,13 @@ export default function ConfirmarPlanPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ConfirmarPlanPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg-base" />}>
+      <ConfirmarPlanContent />
+    </Suspense>
   );
 }

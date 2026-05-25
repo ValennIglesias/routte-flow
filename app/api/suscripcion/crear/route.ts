@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   body: {
     reason: plan.label,
     external_reference: user.id,
-    back_url: `${origin}/dashboard?suscripcion=exitosa`,
+    back_url: `${origin}/dashboard`,
     auto_recurring: {
       frequency: 1,
       frequency_type: "months",

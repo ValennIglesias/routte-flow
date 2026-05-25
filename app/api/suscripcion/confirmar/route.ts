@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 // Plan mapping from MP reason to plan_id
 function getPlanIdFromReason(reason: string): "pro" | "business" | null {
@@ -21,9 +22,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get authenticated user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get authenticated user (usar el client normal)
+const supabase = await createClient();
+const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -91,19 +92,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upsert subscription record
-    const { error: upsertError } = await supabase
-      .from("suscripciones")
-      .upsert(
-        {
-          user_id: user.id,
-          plan_id: planId,
-          mp_subscription_id: preapproval_id,
-          estado: "active",
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" }
-      );
+    // Para el upsert, usar el service client
+const serviceSupabase = createServiceClient();
+const { error: upsertError } = await serviceSupabase
+  .from("suscripciones")
+  .upsert(
+    {
+      user_id: user.id,
+      plan_id: planId,
+      mp_subscription_id: preapproval_id,
+      estado: "active",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
 
     if (upsertError) {
       console.error("[v0] Error upserting subscription:", upsertError);

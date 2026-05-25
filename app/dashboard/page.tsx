@@ -480,12 +480,15 @@ function Dropzone({ file, onFileSelect }: DropzoneProps) {
 
 // ---- Credits widget ----
 
+const STARTER_ROUTE_LIMIT = 15;
+
 interface CreditsWidgetProps {
   used: number;
   total: number;
+  isAtLimit: boolean;
 }
 
-function CreditsWidget({ used, total }: CreditsWidgetProps) {
+function CreditsWidget({ used, total, isAtLimit }: CreditsWidgetProps) {
   const percentage = Math.min((used / total) * 100, 100);
   const isNearLimit = percentage >= 80;
 
@@ -496,20 +499,24 @@ function CreditsWidget({ used, total }: CreditsWidgetProps) {
       </CardHeader>
       <CardBody>
         <div className="flex items-end justify-between mb-3">
-          <span className="text-3xl font-mono font-semibold text-text-primary">{used}</span>
+          <span className={["text-3xl font-mono font-semibold", isAtLimit ? "text-danger" : "text-text-primary"].join(" ")}>
+            {used}
+          </span>
           <span className="text-sm text-text-muted">de {total} rutas</span>
         </div>
         <div className="h-2 w-full rounded-full bg-bg-surface overflow-hidden">
           <div
             className={[
               "h-full rounded-full transition-all duration-500",
-              isNearLimit ? "bg-danger" : "bg-accent",
+              isAtLimit ? "bg-danger" : isNearLimit ? "bg-danger" : "bg-accent",
             ].join(" ")}
             style={{ width: `${percentage}%` }}
           />
         </div>
-        <p className="text-xs text-text-muted mt-2">
-          {total - used} rutas restantes este mes
+        <p className={["text-xs mt-2", isAtLimit ? "text-danger font-medium" : "text-text-muted"].join(" ")}>
+          {isAtLimit
+            ? "Límite alcanzado · Mejorá tu plan"
+            : `${total - used} rutas restantes este mes`}
         </p>
       </CardBody>
       <CardFooter>
@@ -638,12 +645,16 @@ export default function DashboardPage() {
   const [optimizeError, setOptimizeError] = React.useState<string | null>(null);
   const [recentRoutes, setRecentRoutes] = React.useState<RecentRoute[]>([]);
   const [isLoadingRoutes, setIsLoadingRoutes] = React.useState(true);
+  const [monthlyRouteCount, setMonthlyRouteCount] = React.useState(0);
+  const [companyName, setCompanyName] = React.useState("tu empresa");
   const router = useRouter();
   const supabase = createClient();
 
-  // Load recent routes from Supabase
+  const isAtLimit = monthlyRouteCount >= STARTER_ROUTE_LIMIT;
+
+  // Load routes and monthly count from Supabase
   React.useEffect(() => {
-    const loadRoutes = async () => {
+    const loadData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -651,22 +662,44 @@ export default function DashboardPage() {
           return;
         }
 
-        const { data, error } = await supabase
-          .from("rutas")
-          .select("id, created_at, zone, total_stops")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(5);
+        // Use display name from user metadata if available
+        if (user.user_metadata?.full_name) {
+          setCompanyName(user.user_metadata.full_name);
+        } else if (user.email) {
+          setCompanyName(user.email.split("@")[0]);
+        }
 
-        if (error) throw error;
-        setRecentRoutes(data ?? []);
+        // First day of current month in ISO format
+        const now = new Date();
+        const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+        // Run both queries in parallel
+        const [routesResult, countResult] = await Promise.all([
+          supabase
+            .from("rutas")
+            .select("id, created_at, zone, total_stops")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(5),
+          supabase
+            .from("rutas")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id)
+            .gte("created_at", firstOfMonth),
+        ]);
+
+        if (routesResult.error) throw routesResult.error;
+        if (countResult.error) throw countResult.error;
+
+        setRecentRoutes(routesResult.data ?? []);
+        setMonthlyRouteCount(countResult.count ?? 0);
       } catch (err) {
-        console.error("[v0] Error loading routes:", err);
+        console.error("[v0] Error loading dashboard data:", err);
       } finally {
         setIsLoadingRoutes(false);
       }
     };
-    loadRoutes();
+    loadData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -682,7 +715,7 @@ export default function DashboardPage() {
     }
   };
 
-  const canOptimize = file !== null && zone !== "" && origin !== "";
+  const canOptimize = file !== null && zone !== "" && origin !== "" && !isAtLimit;
 
   const handleOptimize = async () => {
     if (!file || !zone || !origin) {
@@ -723,13 +756,6 @@ export default function DashboardPage() {
     }
   };
 
-  // User data (mock)
-  const userData = {
-    companyName: "Logística Pérez",
-    usedRoutes: 8,
-    totalRoutes: 40,
-  };
-
   // Get greeting based on time
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -750,10 +776,10 @@ export default function DashboardPage() {
           <header className="mb-8 flex items-start justify-between">
             <div>
               <h1 className="text-xl sm:text-2xl font-sans font-semibold text-text-primary">
-                {getGreeting()}, {userData.companyName}
+                {getGreeting()}, {companyName}
               </h1>
               <p className="text-sm text-text-muted mt-1">
-                {userData.usedRoutes} rutas usadas este mes de {userData.totalRoutes}
+                {monthlyRouteCount} rutas usadas este mes de {STARTER_ROUTE_LIMIT}
               </p>
             </div>
             <Button
@@ -801,14 +827,21 @@ export default function DashboardPage() {
                   </div>
                 </CardBody>
                 <CardFooter className="justify-end">
-                  <Button
-                    disabled={!canOptimize || isOptimizing}
-                    loading={isOptimizing}
-                    onClick={handleOptimize}
-                    iconRight={<IconArrowRight />}
-                  >
-                    Optimizar Ruta
-                  </Button>
+                  <div className="relative group">
+                    <Button
+                      disabled={!canOptimize || isOptimizing}
+                      loading={isOptimizing}
+                      onClick={handleOptimize}
+                      iconRight={<IconArrowRight />}
+                    >
+                      Optimizar Ruta
+                    </Button>
+                    {isAtLimit && (
+                      <span className="pointer-events-none absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-md border border-border bg-bg-elevated px-2.5 py-1.5 text-xs text-text-muted opacity-0 shadow-sm group-hover:opacity-100 transition-opacity">
+                        Límite mensual alcanzado
+                      </span>
+                    )}
+                  </div>
                 </CardFooter>
               </Card>
 
@@ -819,7 +852,7 @@ export default function DashboardPage() {
             {/* Credits widget - sidebar on desktop, bottom on mobile */}
             <div className="lg:col-span-1">
               <div className="sticky top-6">
-                <CreditsWidget used={userData.usedRoutes} total={userData.totalRoutes} />
+                <CreditsWidget used={monthlyRouteCount} total={STARTER_ROUTE_LIMIT} isAtLimit={isAtLimit} />
               </div>
             </div>
           </div>

@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const subscription = await mpResponse.json();
+    console.log("[debug] MP subscription:", JSON.stringify(subscription));
     const { status, reason, external_reference } = subscription as {
       status?: string;
       reason?: string;
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           plan_id: planId,
           mp_subscription_id: preapproval_id,
-          status: "active",
+          estado: "active",
           updated_at: new Date().toISOString(),
         },
         { onConflict: "user_id" }

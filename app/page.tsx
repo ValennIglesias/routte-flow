@@ -28,11 +28,7 @@ export default function LandingPage() {
   }, []);
 
   const handleAuthNavigation = () => {
-    if (hasSession) {
-      router.push("/dashboard");
-    } else {
-      router.push("/login");
-    }
+    router.push(hasSession ? "/dashboard" : "/login");
   };
 
   return (
@@ -177,6 +173,7 @@ export default function LandingPage() {
               routes={15}
               usedRoutes={0}
               features={["15 rutas por mes", "Exportar a Google Maps", "Soporte por email"]}
+              onSelectPlan={() => router.push("/login")}
             />
 
             {/* Pro */}
@@ -187,6 +184,7 @@ export default function LandingPage() {
               usedRoutes={0}
               highlighted
               features={["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"]}
+              onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=pro" : "/login?plan=pro")}
             />
 
             {/* Business */}
@@ -196,6 +194,7 @@ export default function LandingPage() {
               routes={120}
               usedRoutes={0}
               features={["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"]}
+              onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=business" : "/login?plan=business")}
             />
           </div>
         </div>
@@ -320,6 +319,7 @@ function PricingCard({
   usedRoutes,
   features,
   highlighted = false,
+  onSelectPlan,
 }: {
   name: string;
   price: number;
@@ -327,6 +327,7 @@ function PricingCard({
   usedRoutes: number;
   features: string[];
   highlighted?: boolean;
+  onSelectPlan: () => void;
 }) {
   const percentage = (usedRoutes / routes) * 100;
 
@@ -379,7 +380,7 @@ function PricingCard({
         ))}
       </ul>
 
-      <Button variant={highlighted ? "primary" : "ghost"} className="w-full">
+      <Button variant={highlighted ? "primary" : "ghost"} className="w-full" onClick={onSelectPlan}>
         Elegir plan
       </Button>
     </Card>

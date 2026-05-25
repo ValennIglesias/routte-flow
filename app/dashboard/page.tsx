@@ -352,26 +352,25 @@ const zoneOptions = [
   { value: "Zona Este", label: "Zona Este" },
 ];
 
-// ---- Mock data ----
-
-type RouteStatus = "pending" | "in-progress" | "completed";
+// ---- Route type ----
 
 interface RecentRoute {
   id: string;
-  date: string;
+  created_at: string;
   zone: string;
-  stops: number;
-  status: RouteStatus;
-  link: string;
+  total_stops: number;
 }
 
-const mockRoutes: RecentRoute[] = [
-  { id: "r1", date: "21 May 2026", zone: "Zona Norte", stops: 12, status: "completed", link: "/rutas/r1" },
-  { id: "r2", date: "20 May 2026", zone: "Zona Centro", stops: 8, status: "completed", link: "/rutas/r2" },
-  { id: "r3", date: "19 May 2026", zone: "Zona Sur", stops: 15, status: "in-progress", link: "/rutas/r3" },
-  { id: "r4", date: "18 May 2026", zone: "Zona Oeste", stops: 6, status: "completed", link: "/rutas/r4" },
-  { id: "r5", date: "17 May 2026", zone: "Zona Norte", stops: 10, status: "pending", link: "/rutas/r5" },
-];
+// ---- Date formatter ----
+
+function formatDateSpanish(dateString: string): string {
+  const date = new Date(dateString);
+  const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const day = date.getDate();
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
 
 // ---- Dropzone component ----
 
@@ -549,12 +548,32 @@ function EmptyState() {
 
 interface RoutesTableProps {
   routes: RecentRoute[];
+  isLoading: boolean;
 }
 
-function RoutesTable({ routes }: RoutesTableProps) {
+function RoutesTable({ routes, isLoading }: RoutesTableProps) {
+  if (isLoading) {
+    return (
+      <Card padding="none">
+        <div className="px-5 py-4 border-b border-border">
+          <h3 className="font-mono text-sm font-medium text-text-primary uppercase tracking-wide">
+            Rutas recientes
+          </h3>
+        </div>
+        <div className="p-8 flex justify-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        </div>
+      </Card>
+    );
+  }
+
   if (routes.length === 0) {
     return <EmptyState />;
   }
+
+  const handleViewLink = (routeId: string) => {
+    window.open(`${window.location.origin}/ruta/${routeId}`, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <Card padding="none">
@@ -587,14 +606,14 @@ function RoutesTable({ routes }: RoutesTableProps) {
           <tbody>
             {routes.map((route) => (
               <tr key={route.id} className="border-b border-border last:border-0 hover:bg-bg-surface/50 transition-colors">
-                <td className="px-5 py-3 text-text-primary whitespace-nowrap">{route.date}</td>
+                <td className="px-5 py-3 text-text-primary whitespace-nowrap">{formatDateSpanish(route.created_at)}</td>
                 <td className="px-5 py-3 text-text-muted whitespace-nowrap">{route.zone}</td>
-                <td className="px-5 py-3 text-text-muted">{route.stops}</td>
+                <td className="px-5 py-3 text-text-muted">{route.total_stops}</td>
                 <td className="px-5 py-3">
-                  <Badge variant={route.status} />
+                  <Badge variant="completed" />
                 </td>
                 <td className="px-5 py-3 text-right">
-                  <Button variant="ghost" size="sm" iconLeft={<IconLink />}>
+                  <Button variant="ghost" size="sm" iconLeft={<IconLink />} onClick={() => handleViewLink(route.id)}>
                     Ver link
                   </Button>
                 </td>
@@ -614,12 +633,42 @@ export default function DashboardPage() {
   const [file, setFile] = React.useState<File | null>(null);
   const [zone, setZone] = React.useState("");
   const [origin, setOrigin] = React.useState("");
-  const [showEmptyState, setShowEmptyState] = React.useState(false);
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const [isOptimizing, setIsOptimizing] = React.useState(false);
   const [optimizeError, setOptimizeError] = React.useState<string | null>(null);
+  const [recentRoutes, setRecentRoutes] = React.useState<RecentRoute[]>([]);
+  const [isLoadingRoutes, setIsLoadingRoutes] = React.useState(true);
   const router = useRouter();
   const supabase = createClient();
+
+  // Load recent routes from Supabase
+  React.useEffect(() => {
+    const loadRoutes = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setIsLoadingRoutes(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("rutas")
+          .select("id, created_at, zone, total_stops")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+        setRecentRoutes(data ?? []);
+      } catch (err) {
+        console.error("[v0] Error loading routes:", err);
+      } finally {
+        setIsLoadingRoutes(false);
+      }
+    };
+    loadRoutes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -763,30 +812,14 @@ export default function DashboardPage() {
                 </CardFooter>
               </Card>
 
-              {/* Recent routes table or empty state */}
-              {showEmptyState ? (
-                <EmptyState />
-              ) : (
-                <RoutesTable routes={mockRoutes} />
-              )}
+              {/* Recent routes table */}
+              <RoutesTable routes={recentRoutes} isLoading={isLoadingRoutes} />
             </div>
 
             {/* Credits widget - sidebar on desktop, bottom on mobile */}
             <div className="lg:col-span-1">
               <div className="sticky top-6">
                 <CreditsWidget used={userData.usedRoutes} total={userData.totalRoutes} />
-
-                {/* Quick toggle for demo */}
-                <div className="mt-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs"
-                    onClick={() => setShowEmptyState(!showEmptyState)}
-                  >
-                    {showEmptyState ? "Ver rutas de ejemplo" : "Ver estado vacío"}
-                  </Button>
-                </div>
               </div>
             </div>
           </div>

@@ -146,6 +146,7 @@ export default function LoginPage() {
         >
           Continuar con Google
         </Button>
+        
 
         {/* Footer text */}
         <p className="text-xs text-text-muted text-center max-w-xs">

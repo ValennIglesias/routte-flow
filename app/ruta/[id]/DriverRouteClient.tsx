@@ -33,10 +33,9 @@ export default function DriverRouteClient({ route }: { route: RouteRow }) {
     });
   };
 
-  const openWaze = (address: string) => {
-    const encoded = encodeURIComponent(address);
-    window.open(`https://waze.com/ul?q=${encoded}`, "_blank");
-  };
+  const openWaze = (lat: number, lng: number) => {
+  window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, "_blank");
+};
 
   const totalStops = route.stops.length;
   const deliveredCount = deliveredStops.size;
@@ -158,14 +157,14 @@ export default function DriverRouteClient({ route }: { route: RouteRow }) {
                       <p className="text-xs text-[#9ca3af] mb-1.5">{stop.localidad}</p>
                     )}
                     <button
-                      onClick={() => openWaze(stop.address)}
-                      disabled={isDelivered}
-                      className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
-                        isDelivered
-                          ? "text-[#d1d5db] cursor-not-allowed"
-                          : "text-[#3b82f6] active:text-[#1d4ed8]"
-                      }`}
-                    >
+  onClick={() => openWaze(stop.lat, stop.lng)}
+  disabled={isDelivered}
+  className={`inline-flex items-center gap-1.5 text-sm font-medium transition-colors ${
+    isDelivered
+      ? "text-[#d1d5db] cursor-not-allowed"
+      : "text-[#3b82f6] active:text-[#1d4ed8]"
+  }`}
+>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />

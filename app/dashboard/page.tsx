@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // ---- Icons ----
 
@@ -842,10 +842,91 @@ export default function DashboardPage() {
   const [companyName, setCompanyName] = React.useState("tu empresa");
   const [currentPlan, setCurrentPlan] = React.useState<PlanType>("starter");
   const [showPlansModal, setShowPlansModal] = React.useState(false);
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const isAtLimit = monthlyRouteCount >= STARTER_ROUTE_LIMIT;
+
+  // Function to reload dashboard data
+  const reloadDashboardData = React.useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const now = new Date();
+      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [routesResult, countResult, subscriptionResult] = await Promise.all([
+        supabase
+          .from("rutas")
+          .select("id, created_at, zone, total_stops")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("rutas")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", firstOfMonth),
+        supabase
+          .from("suscripciones")
+          .select("plan_id, status")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (!routesResult.error) setRecentRoutes(routesResult.data ?? []);
+      if (!countResult.error) setMonthlyRouteCount(countResult.count ?? 0);
+
+      if (subscriptionResult.data?.plan_id) {
+        const planId = subscriptionResult.data.plan_id as PlanType;
+        if (planId === "pro" || planId === "business") {
+          setCurrentPlan(planId);
+        }
+      }
+    } catch (err) {
+      console.error("[v0] Error reloading dashboard data:", err);
+    }
+  }, [supabase]);
+
+  // Check for subscription confirmation on mount
+  React.useEffect(() => {
+    const confirmSubscription = async () => {
+      const suscripcion = searchParams.get("suscripcion");
+      const preapprovalId = searchParams.get("preapproval_id");
+
+      if (suscripcion === "exitosa" && preapprovalId) {
+        try {
+          const response = await fetch("/api/suscripcion/confirmar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ preapproval_id: preapprovalId }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            setSuccessMessage("Plan actualizado correctamente!");
+            await reloadDashboardData();
+            // Auto-hide success message after 5 seconds
+            setTimeout(() => setSuccessMessage(null), 5000);
+          }
+        } catch (err) {
+          console.error("[v0] Error confirming subscription:", err);
+        }
+
+        // Clean up URL params
+        router.replace("/dashboard");
+      }
+    };
+
+    confirmSubscription();
+  }, [searchParams, router, reloadDashboardData]);
 
   // Load routes, monthly count, and subscription from Supabase
   React.useEffect(() => {
@@ -1006,9 +1087,27 @@ export default function DashboardPage() {
               variant="ghost"
               size="md"
             >
-              Cerrar sesión
+              Cerrar sesion
             </Button>
           </header>
+
+          {/* Success banner */}
+          {successMessage && (
+            <div className="mb-6 flex items-center gap-3 rounded-md border border-success/30 bg-success/10 px-4 py-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-success shrink-0" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M22 4L12 14.01l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <p className="text-sm font-medium text-success">{successMessage}</p>
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="ml-auto text-success/70 hover:text-success transition-colors"
+                aria-label="Cerrar mensaje"
+              >
+                <IconX size={16} />
+              </button>
+            </div>
+          )}
 
           {/* Layout: Main + Sidebar widget */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

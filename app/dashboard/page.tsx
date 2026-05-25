@@ -523,7 +523,7 @@ function CreditsWidget({ used, total, isAtLimit, onUpgradeClick }: CreditsWidget
         </p>
       </CardBody>
       <CardFooter>
-        <Button variant="ghost" size="sm" className="w-full" onClick={onUpgradeClick}>
+        <Button variant="primary" size="sm" className="w-full" onClick={onUpgradeClick}>
           Mejorar plan
         </Button>
       </CardFooter>

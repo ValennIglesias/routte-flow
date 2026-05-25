@@ -47,6 +47,105 @@ function IconExternalLink({ size = 14 }: { size?: number }) {
   );
 }
 
+function IconCopy({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconCheck({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ---- Share modal ----
+
+function ShareModal({
+  routeId,
+  onClose,
+}: {
+  routeId: string;
+  onClose: () => void;
+}) {
+  const shareUrl = `${window.location.origin}/ruta/${routeId}`;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for browsers without clipboard API
+      const el = document.createElement("textarea");
+      el.value = shareUrl;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleOpenDriver = () => {
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Compartir ruta con chofer"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-md rounded-xl border border-border bg-bg-card shadow-xl p-6 flex flex-col gap-5">
+        {/* Header */}
+        <div>
+          <h2 className="text-base font-semibold text-text-primary">
+            Compartir con chofer
+          </h2>
+          <p className="text-sm text-text-muted mt-1">
+            Copiá el link y enviáselo al chofer para que vea su ruta.
+          </p>
+        </div>
+
+        {/* Link box */}
+        <div className="flex items-center gap-2 rounded-md border border-border bg-bg-surface px-3 py-2">
+          <span className="flex-1 min-w-0 truncate font-mono text-xs text-text-muted">
+            {shareUrl}
+          </span>
+          <button
+            onClick={handleCopy}
+            className="shrink-0 flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
+            aria-label="Copiar link"
+          >
+            {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+            {copied ? "Copiado" : "Copiar"}
+          </button>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-2 justify-end">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Cerrar
+          </Button>
+          <Button size="sm" iconRight={<IconExternalLink size={14} />} onClick={handleOpenDriver}>
+            Abrir vista del chofer
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---- Empty state ----
 
 function EmptyState({ onBack }: { onBack: () => void }) {
@@ -78,6 +177,10 @@ export default function RoutePreviewPage() {
   const router = useRouter();
   const [routeData, setRouteData] = useState<RouteData | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     try {
@@ -94,6 +197,39 @@ export default function RoutePreviewPage() {
 
   const handleBack = () => router.push("/dashboard");
 
+  const handleShare = async () => {
+    if (!routeData) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const response = await fetch("/api/save-route", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stops: routeData.stops,
+          total_stops: routeData.total_stops,
+          zone: routeData.zone,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al guardar la ruta");
+      }
+
+      setSavedRouteId(data.id);
+      setShowShareModal(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      setSaveError(message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Wait for client mount to avoid SSR mismatch
   if (!loaded) return null;
 
@@ -105,6 +241,11 @@ export default function RoutePreviewPage() {
 
   return (
     <div className="min-h-screen bg-bg-base">
+      {/* Share modal */}
+      {showShareModal && savedRouteId && (
+        <ShareModal routeId={savedRouteId} onClose={() => setShowShareModal(false)} />
+      )}
+
       {/* Top bar */}
       <header className="sticky top-0 z-10 border-b border-border bg-bg-base/95 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
@@ -130,7 +271,13 @@ export default function RoutePreviewPage() {
           </div>
 
           {/* Share button */}
-          <Button size="sm" iconRight={<IconArrowRight />}>
+          <Button
+            size="sm"
+            iconRight={<IconArrowRight />}
+            onClick={handleShare}
+            loading={isSaving}
+            disabled={isSaving}
+          >
             Compartir con chofer
           </Button>
         </div>
@@ -147,6 +294,13 @@ export default function RoutePreviewPage() {
             {total_stops} paradas ordenadas
           </p>
         </div>
+
+        {/* Error banner */}
+        {saveError && (
+          <div className="mb-5 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+            {saveError}
+          </div>
+        )}
 
         {/* Stops list */}
         <ol className="flex flex-col gap-3" aria-label="Lista de paradas">

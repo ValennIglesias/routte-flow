@@ -480,7 +480,12 @@ function Dropzone({ file, onFileSelect }: DropzoneProps) {
 
 // ---- Credits widget ----
 
-const STARTER_ROUTE_LIMIT = 15;
+const PLAN_LIMITS: Record<string, number> = {
+  starter: 15,
+  pro: 40,
+  business: 120,
+};
+
 
 type PlanType = "starter" | "pro" | "business";
 
@@ -847,7 +852,8 @@ export default function DashboardPage() {
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const isAtLimit = monthlyRouteCount >= STARTER_ROUTE_LIMIT;
+  const routeLimit = PLAN_LIMITS[currentPlan] ?? 15;
+  const isAtLimit = monthlyRouteCount >= routeLimit;
 
   // Function to reload dashboard data
   const reloadDashboardData = React.useCallback(async () => {
@@ -872,9 +878,9 @@ export default function DashboardPage() {
           .gte("created_at", firstOfMonth),
         supabase
           .from("suscripciones")
-          .select("plan_id, status")
+          .select("plan_id, estado")
           .eq("user_id", user.id)
-          .eq("status", "active")
+          .eq("estado", "active")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
@@ -1077,7 +1083,7 @@ export default function DashboardPage() {
                 {getGreeting()}, {companyName}
               </h1>
               <p className="text-sm text-text-muted mt-1">
-                {monthlyRouteCount} rutas usadas este mes de {STARTER_ROUTE_LIMIT}
+                {monthlyRouteCount} rutas usadas este mes de {routeLimit}
               </p>
             </div>
             <Button
@@ -1168,7 +1174,7 @@ export default function DashboardPage() {
             {/* Credits widget - sidebar on desktop, bottom on mobile */}
             <div className="lg:col-span-1">
               <div className="sticky top-6">
-                <CreditsWidget used={monthlyRouteCount} total={STARTER_ROUTE_LIMIT} isAtLimit={isAtLimit} onUpgradeClick={() => setShowPlansModal(true)} />
+                <CreditsWidget used={monthlyRouteCount} total={routeLimit} isAtLimit={isAtLimit} onUpgradeClick={() => setShowPlansModal(true)} />
               </div>
             </div>
           </div>

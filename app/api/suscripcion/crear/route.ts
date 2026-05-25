@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     const response = await preApprovalPlan.create({
       body: {
         reason: plan.label,
+        external_reference: user.id,
         back_url: `${origin}/dashboard?suscripcion=exitosa`,
         auto_recurring: {
           frequency: 1,

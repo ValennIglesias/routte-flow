@@ -50,18 +50,18 @@ export async function POST(request: NextRequest) {
     const preApprovalPlan = new PreApprovalPlan(client);
 
     const response = await preApprovalPlan.create({
-      body: {
-        reason: plan.label,
-        external_reference: user.id,
-        back_url: `${origin}/dashboard?suscripcion=exitosa`,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: "months",
-          transaction_amount: plan.amount,
-          currency_id: "ARS",
-        },
-      },
-    });
+  body: {
+    reason: plan.label,
+    external_reference: user.id,
+    back_url: `${origin}/dashboard?suscripcion=exitosa`,
+    auto_recurring: {
+      frequency: 1,
+      frequency_type: "months",
+      transaction_amount: plan.amount,
+      currency_id: "ARS",
+    },
+  } as any,
+});
 
     const init_point = (response as any).init_point;
 

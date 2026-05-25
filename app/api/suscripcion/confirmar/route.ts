@@ -60,7 +60,6 @@ const { data: { user }, error: authError } = await supabase.auth.getUser();
     }
 
     const subscription = await mpResponse.json();
-    console.log("[debug] MP subscription:", JSON.stringify(subscription));
     const { status, reason, external_reference } = subscription as {
       status?: string;
       reason?: string;

@@ -345,11 +345,11 @@ function DepotSelector({ onDepotChange }: DepotSelectorProps) {
 // ---- Zone options ----
 
 const zoneOptions = [
-  { value: "norte", label: "Zona Norte" },
-  { value: "centro", label: "Zona Centro" },
-  { value: "sur", label: "Zona Sur" },
-  { value: "oeste", label: "Zona Oeste" },
-  { value: "este", label: "Zona Este" },
+  { value: "Zona Norte", label: "Zona Norte" },
+  { value: "Zona Centro", label: "Zona Centro" },
+  { value: "Zona Sur", label: "Zona Sur" },
+  { value: "Zona Oeste", label: "Zona Oeste" },
+  { value: "Zona Este", label: "Zona Este" },
 ];
 
 // ---- Mock data ----

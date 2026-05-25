@@ -11,18 +11,19 @@ import { useState, useEffect } from "react";
 type AuthMode = "login" | "register";
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [supabaseConfigured, setSupabaseConfigured] = useState(true);
-  const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const [supabase, setSupabase] = useState<any>(null);
-
-  const plan = searchParams.get("plan") ?? null;
-  const hasPlan = plan === "pro" || plan === "business";
+const plan = searchParams.get("plan") ?? null;
+const hasPlan = plan === "pro" || plan === "business";
+const [mode, setMode] = useState<AuthMode>(
+  hasPlan || searchParams.get("mode") === "register" ? "register" : "login"
+);
+const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+const [supabaseConfigured, setSupabaseConfigured] = useState(true);
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+const router = useRouter();
+const [supabase, setSupabase] = useState<any>(null);
 
   // Destination after successful auth
   const postAuthRedirect = hasPlan

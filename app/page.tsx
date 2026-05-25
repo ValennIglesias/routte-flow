@@ -28,8 +28,9 @@ export default function LandingPage() {
   }, []);
 
   const handleAuthNavigation = () => {
-    router.push(hasSession ? "/dashboard" : "/login");
-  };
+  router.push(hasSession ? "/dashboard" : "/login?mode=register");
+};
+  
 
   return (
     <div className="min-h-screen bg-bg-base text-text-primary">
@@ -177,25 +178,25 @@ export default function LandingPage() {
             />
 
             {/* Pro */}
-            <PricingCard
-              name="Pro"
-              price={25}
-              routes={40}
-              usedRoutes={0}
-              highlighted
-              features={["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"]}
-              onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=pro" : "/login?plan=pro")}
-            />
+<PricingCard
+  name="Pro"
+  price={25}
+  routes={40}
+  usedRoutes={0}
+  highlighted
+  features={["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"]}
+  onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=pro" : "/login?plan=pro&mode=register")}
+/>
 
-            {/* Business */}
-            <PricingCard
-              name="Business"
-              price={60}
-              routes={120}
-              usedRoutes={0}
-              features={["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"]}
-              onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=business" : "/login?plan=business")}
-            />
+{/* Business */}
+<PricingCard
+  name="Business"
+  price={60}
+  routes={120}
+  usedRoutes={0}
+  features={["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"]}
+  onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=business" : "/login?plan=business&mode=register")}
+/>
           </div>
         </div>
       </section>

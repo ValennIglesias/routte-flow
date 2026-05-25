@@ -900,7 +900,7 @@ export default function DashboardPage() {
       const suscripcion = searchParams.get("suscripcion");
       const preapprovalId = searchParams.get("preapproval_id");
 
-      if (suscripcion === "exitosa" && preapprovalId) {
+      if (preapprovalId) {
         try {
           const response = await fetch("/api/suscripcion/confirmar", {
             method: "POST",
@@ -963,10 +963,10 @@ export default function DashboardPage() {
             .eq("user_id", user.id)
             .gte("created_at", firstOfMonth),
           supabase
-            .from("suscripciones")
-            .select("plan_id, status")
-            .eq("user_id", user.id)
-            .eq("status", "active")
+  .from("suscripciones")
+  .select("plan_id, estado")
+  .eq("user_id", user.id)
+  .eq("estado", "active")
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle(),

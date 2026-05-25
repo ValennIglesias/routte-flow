@@ -105,13 +105,12 @@ interface Depot {
 
 // ---- DepotSelector component ----
 
-const STARTER_DEPOT_LIMIT = 1;
-
 interface DepotSelectorProps {
   onDepotChange: (address: string) => void;
+  currentPlan: PlanType;
 }
 
-function DepotSelector({ onDepotChange }: DepotSelectorProps) {
+function DepotSelector({ onDepotChange, currentPlan }: DepotSelectorProps) {
   const supabase = createClient();
   const [depots, setDepots] = React.useState<Depot[]>([]);
   const [selectedDepotId, setSelectedDepotId] = React.useState("");
@@ -121,6 +120,14 @@ function DepotSelector({ onDepotChange }: DepotSelectorProps) {
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  const DEPOT_LIMITS: Record<string, number> = {
+    starter: 1,
+    pro: 3,
+    business: 10,
+  };
+  const depotLimit = DEPOT_LIMITS[currentPlan] ?? 1;
+  
 
   // Load depots on mount
   React.useEffect(() => {
@@ -224,7 +231,7 @@ function DepotSelector({ onDepotChange }: DepotSelectorProps) {
     }
   };
 
-  const atLimit = depots.length >= STARTER_DEPOT_LIMIT;
+  const atLimit = depots.length >= depotLimit;
 
   if (isLoading) {
     return (
@@ -284,7 +291,7 @@ function DepotSelector({ onDepotChange }: DepotSelectorProps) {
             <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           <p className="text-xs leading-relaxed text-accent">
-            Estás en el plan Starter · Solo podés guardar 1 depósito.{" "}
+            Estás en el plan {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} · Solo podés guardar {depotLimit} depósito{depotLimit > 1 ? "s" : ""}.{" "}
             <span className="font-semibold">Mejorá tu plan</span> para agregar más.
           </p>
         </div>
@@ -1082,9 +1089,19 @@ export default function DashboardPage() {
               <h1 className="text-xl sm:text-2xl font-sans font-semibold text-text-primary">
                 {getGreeting()}, {companyName}
               </h1>
-              <p className="text-sm text-text-muted mt-1">
-                {monthlyRouteCount} rutas usadas este mes de {routeLimit}
-              </p>
+        <div className="flex items-center gap-2 mt-1">
+         <span className={[
+         "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono font-medium",
+          currentPlan === "business" ? "bg-accent text-bg-base" :
+          currentPlan === "pro" ? "bg-accent/20 text-accent border border-accent/30" :
+          "bg-bg-card text-text-muted border border-border"
+            ].join(" ")}>
+            {currentPlan === "business" ? "★ Business" : 
+               currentPlan === "pro" ? "⚡ Pro" : 
+               "Starter"}
+              </span>
+  
+            </div>
             </div>
             <Button
               onClick={handleSignOut}
@@ -1145,7 +1162,10 @@ export default function DashboardPage() {
                       onChange={(e) => setZone(e.target.value)}
                       iconLeft={<IconMap />}
                     />
-                    <DepotSelector onDepotChange={(address) => setOrigin(address)} />
+                    <DepotSelector 
+                      onDepotChange={(address) => setOrigin(address)}
+                      currentPlan={currentPlan}
+                    />
                   </div>
                 </CardBody>
                 <CardFooter className="justify-end">

@@ -1,7 +1,40 @@
+"use client";
+
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
+  const router = useRouter();
+  const [hasSession, setHasSession] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        setHasSession(!!data.session);
+      } catch (error) {
+        console.error("[v0] Error checking session:", error);
+        setHasSession(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkSession();
+  }, []);
+
+  const handleAuthNavigation = () => {
+    if (hasSession) {
+      router.push("/dashboard");
+    } else {
+      router.push("/login");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-bg-base text-text-primary">
       {/* Navigation */}
@@ -18,8 +51,8 @@ export default function LandingPage() {
             <span className="font-mono font-medium text-lg tracking-tight">RouteFlow</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm">Iniciar sesión</Button>
-            <Button variant="primary" size="sm">Empezar gratis</Button>
+            <Button variant="ghost" size="sm" onClick={handleAuthNavigation}>Iniciar sesión</Button>
+            <Button variant="primary" size="sm" onClick={handleAuthNavigation}>Empezar gratis</Button>
           </div>
         </div>
       </nav>
@@ -49,7 +82,7 @@ export default function LandingPage() {
             Optimizá rutas de entrega al instante. Subí un Excel, elegí la zona y compartí el link con tu chofer.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button variant="primary" size="lg">
+            <Button variant="primary" size="lg" onClick={handleAuthNavigation}>
               Empezar gratis
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-1">
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -245,7 +278,7 @@ export default function LandingPage() {
           <p className="text-text-muted text-lg mb-8">
             Creá tu cuenta gratis y lanzá tu primera ruta en menos de 5 minutos.
           </p>
-          <Button variant="primary" size="lg">
+          <Button variant="primary" size="lg" onClick={handleAuthNavigation}>
             Crear cuenta gratis
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="ml-1">
               <path d="M5 12h14M12 5l7 7-7 7" />

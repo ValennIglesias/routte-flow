@@ -84,14 +84,272 @@ function IconEmpty({ size = 48 }: { size?: number }) {
   );
 }
 
+// ---- Trash icon ----
+
+function IconTrash({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ---- Depot types ----
+
+interface Depot {
+  id: string;
+  nombre: string;
+  direccion: string;
+  user_id: string;
+}
+
+// ---- DepotSelector component ----
+
+const STARTER_DEPOT_LIMIT = 1;
+
+interface DepotSelectorProps {
+  onDepotChange: (address: string) => void;
+}
+
+function DepotSelector({ onDepotChange }: DepotSelectorProps) {
+  const supabase = createClient();
+  const [depots, setDepots] = React.useState<Depot[]>([]);
+  const [selectedDepotId, setSelectedDepotId] = React.useState("");
+  const [showForm, setShowForm] = React.useState(false);
+  const [formNombre, setFormNombre] = React.useState("");
+  const [formDireccion, setFormDireccion] = React.useState("");
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Load depots on mount
+  React.useEffect(() => {
+    const loadDepots = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from("depositos")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        setDepots(data ?? []);
+
+        // Auto-select first depot and notify parent
+        if (data && data.length > 0) {
+          setSelectedDepotId(data[0].id);
+          onDepotChange(data[0].direccion);
+        }
+      } catch (err) {
+        console.error("[v0] Error loading depots:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadDepots();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    setSelectedDepotId(id);
+    const depot = depots.find((d) => d.id === id);
+    if (depot) onDepotChange(depot.direccion);
+  };
+
+  const validateDireccion = (dir: string) => /\d/.test(dir);
+
+  const handleSave = async () => {
+    if (!formNombre.trim()) {
+      setFormError("Ingresá un nombre para el depósito.");
+      return;
+    }
+    if (!validateDireccion(formDireccion)) {
+      setFormError("Ingresá una dirección válida con altura (ej: Av. Corrientes 1234)");
+      return;
+    }
+
+    setIsSaving(true);
+    setFormError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+
+      const { data, error } = await supabase
+        .from("depositos")
+        .insert({ nombre: formNombre.trim(), direccion: formDireccion.trim(), user_id: user.id })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newDepots = [...depots, data as Depot];
+      setDepots(newDepots);
+      setSelectedDepotId(data.id);
+      onDepotChange(data.direccion);
+      setShowForm(false);
+      setFormNombre("");
+      setFormDireccion("");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al guardar";
+      setFormError(msg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (depotId: string) => {
+    const depot = depots.find((d) => d.id === depotId);
+    if (!depot) return;
+    if (!window.confirm(`¿Eliminar el depósito "${depot.nombre}"?`)) return;
+
+    try {
+      const { error } = await supabase.from("depositos").delete().eq("id", depotId);
+      if (error) throw error;
+
+      const remaining = depots.filter((d) => d.id !== depotId);
+      setDepots(remaining);
+
+      if (selectedDepotId === depotId) {
+        const next = remaining[0] ?? null;
+        setSelectedDepotId(next?.id ?? "");
+        onDepotChange(next?.direccion ?? "");
+      }
+    } catch (err) {
+      console.error("[v0] Error deleting depot:", err);
+    }
+  };
+
+  const atLimit = depots.length >= STARTER_DEPOT_LIMIT;
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-text-muted">
+          Depósito de origen
+        </span>
+        <div className="h-9 rounded-md bg-bg-surface border border-border animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {depots.length > 0 ? (
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <Select
+              label="Depósito de origen"
+              options={depots.map((d) => ({ value: d.id, label: `${d.nombre} — ${d.direccion}` }))}
+              placeholder="Seleccioná un depósito"
+              value={selectedDepotId}
+              onChange={handleSelectChange}
+              iconLeft={<IconWarehouse />}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => selectedDepotId && handleDelete(selectedDepotId)}
+            className="mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-bg-surface text-text-muted hover:border-danger/50 hover:text-danger transition-colors"
+            aria-label="Eliminar depósito"
+          >
+            <IconTrash />
+          </button>
+        </div>
+      ) : !showForm ? (
+        <div className="flex flex-col gap-1.5">
+          <span className="font-mono text-[11px] font-medium uppercase tracking-widest text-text-muted">
+            Depósito de origen
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowForm(true)}
+            className="w-full justify-start border border-dashed border-border"
+          >
+            + Agregar depósito
+          </Button>
+        </div>
+      ) : null}
+
+      {/* Plan limit notice — shown when at depot limit */}
+      {atLimit && !showForm && (
+        <div className="flex items-start gap-2.5 rounded-md border border-accent/30 bg-accent/10 px-3 py-2.5">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mt-0.5 shrink-0 text-accent">
+            <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M7 11V7a5 5 0 0110 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <p className="text-xs leading-relaxed text-accent">
+            Estás en el plan Starter · Solo podés guardar 1 depósito.{" "}
+            <span className="font-semibold">Mejorá tu plan</span> para agregar más.
+          </p>
+        </div>
+      )}
+
+      {/* "+ Agregar" button when depots exist and below limit */}
+      {depots.length > 0 && !showForm && !atLimit && (
+        <div className="w-fit">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowForm(true)}
+          >
+            + Agregar depósito
+          </Button>
+        </div>
+      )}
+
+      {/* Inline form */}
+      {showForm && (
+        <div className="rounded-md border border-border bg-bg-surface p-4 flex flex-col gap-3">
+          <Input
+            label="Nombre del depósito"
+            placeholder="Ej: Depósito Central"
+            value={formNombre}
+            onChange={(e) => setFormNombre(e.target.value)}
+          />
+          <Input
+            label="Dirección"
+            placeholder="Ej: Av. Corrientes 1234"
+            value={formDireccion}
+            onChange={(e) => setFormDireccion(e.target.value)}
+            iconLeft={<IconWarehouse />}
+            error={formError && !validateDireccion(formDireccion) ? formError : undefined}
+          />
+          {formError && validateDireccion(formDireccion) && (
+            <p className="text-xs text-danger">{formError}</p>
+          )}
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowForm(false); setFormNombre(""); setFormDireccion(""); setFormError(null); }}
+              disabled={isSaving}
+            >
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={handleSave} loading={isSaving} disabled={isSaving}>
+              Guardar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- Zone options ----
 
 const zoneOptions = [
-  { value: "norte", label: "Zona Norte" },
-  { value: "centro", label: "Zona Centro" },
-  { value: "sur", label: "Zona Sur" },
-  { value: "oeste", label: "Zona Oeste" },
-  { value: "este", label: "Zona Este" },
+  { value: "Zona Norte", label: "Zona Norte" },
+  { value: "Zona Centro", label: "Zona Centro" },
+  { value: "Zona Sur", label: "Zona Sur" },
+  { value: "Zona Oeste", label: "Zona Oeste" },
+  { value: "Zona Este", label: "Zona Este" },
 ];
 
 // ---- Mock data ----
@@ -358,6 +616,8 @@ export default function DashboardPage() {
   const [origin, setOrigin] = React.useState("");
   const [showEmptyState, setShowEmptyState] = React.useState(false);
   const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const [isOptimizing, setIsOptimizing] = React.useState(false);
+  const [optimizeError, setOptimizeError] = React.useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -373,11 +633,45 @@ export default function DashboardPage() {
     }
   };
 
-  const canOptimize = file !== null && zone !== "";
+  const canOptimize = file !== null && zone !== "" && origin !== "";
 
-  const handleOptimize = () => {
-    // In production, this would trigger route optimization
-    console.log("Optimizing route:", { file: file?.name, zone, origin });
+  const handleOptimize = async () => {
+    if (!file || !zone || !origin) {
+      setOptimizeError("Por favor completá todos los campos: archivo, zona y depósito de origen.");
+      return;
+    }
+
+    setIsOptimizing(true);
+    setOptimizeError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("zone", zone);
+      formData.append("depot", origin);
+
+      const response = await fetch("/api/optimize-route", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error al optimizar la ruta");
+      }
+
+      // Store optimized route data in sessionStorage
+      sessionStorage.setItem("optimizedRoute", JSON.stringify(data));
+
+      // Redirect to preview page
+      router.push("/ruta/preview");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido al optimizar la ruta";
+      setOptimizeError(errorMessage);
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   // User data (mock)
@@ -434,6 +728,13 @@ export default function DashboardPage() {
                   <CardTitle as="h2">Nueva ruta</CardTitle>
                 </CardHeader>
                 <CardBody className="flex flex-col gap-5">
+                  {/* Error banner */}
+                  {optimizeError && (
+                    <div className="rounded-md bg-danger/10 border border-danger/30 p-3 text-sm text-danger">
+                      {optimizeError}
+                    </div>
+                  )}
+
                   {/* Dropzone */}
                   <Dropzone file={file} onFileSelect={setFile} />
 
@@ -447,18 +748,13 @@ export default function DashboardPage() {
                       onChange={(e) => setZone(e.target.value)}
                       iconLeft={<IconMap />}
                     />
-                    <Input
-                      label="Depósito de origen"
-                      placeholder="Ej: Av. Corrientes 1234"
-                      value={origin}
-                      onChange={(e) => setOrigin(e.target.value)}
-                      iconLeft={<IconWarehouse />}
-                    />
+                    <DepotSelector onDepotChange={(address) => setOrigin(address)} />
                   </div>
                 </CardBody>
                 <CardFooter className="justify-end">
                   <Button
-                    disabled={!canOptimize}
+                    disabled={!canOptimize || isOptimizing}
+                    loading={isOptimizing}
                     onClick={handleOptimize}
                     iconRight={<IconArrowRight />}
                   >

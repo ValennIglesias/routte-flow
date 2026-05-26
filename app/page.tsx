@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
+
 
 export default function LandingPage() {
   const router = useRouter();
@@ -37,16 +39,16 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-bg-base">
-                <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
-                <path d="M12 22V12" />
-                <path d="M4 7l8 5 8-5" />
-              </svg>
-            </div>
-            <span className="font-mono font-medium text-lg tracking-tight">RouteFlow</span>
-          </div>
+          <Link href="/" className="flex items-center gap-2">
+  <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-bg-base">
+      <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
+      <path d="M12 22V12" />
+      <path d="M4 7l8 5 8-5" />
+    </svg>
+  </div>
+  <span className="font-mono font-medium text-lg tracking-tight">RouteFlow</span>
+</Link>
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => router.push(hasSession ? "/dashboard" : "/login")}>Iniciar sesión</Button>
             <Button variant="primary" size="sm" onClick={handleAuthNavigation}>Empezar gratis</Button>
@@ -291,14 +293,14 @@ export default function LandingPage() {
       <footer className="py-8 border-t border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <div className="w-6 h-6 rounded bg-accent flex items-center justify-center">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-bg-base">
                   <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
                 </svg>
               </div>
               <span className="font-mono text-sm text-text-muted">RouteFlow</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-6 text-sm text-text-muted">
               <a href="#" className="hover:text-text-primary transition-colors duration-150">Términos</a>
               <a href="#" className="hover:text-text-primary transition-colors duration-150">Privacidad</a>

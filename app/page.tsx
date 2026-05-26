@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/Card";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
+
 
 export default function LandingPage() {
   const router = useRouter();
@@ -28,30 +30,27 @@ export default function LandingPage() {
   }, []);
 
   const handleAuthNavigation = () => {
-    if (hasSession) {
-      router.push("/dashboard");
-    } else {
-      router.push("/login");
-    }
-  };
+  router.push(hasSession ? "/dashboard" : "/login?mode=register");
+};
+  
 
   return (
     <div className="min-h-screen bg-bg-base text-text-primary">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-bg-base/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-bg-base">
-                <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
-                <path d="M12 22V12" />
-                <path d="M4 7l8 5 8-5" />
-              </svg>
-            </div>
-            <span className="font-mono font-medium text-lg tracking-tight">RouteFlow</span>
-          </div>
+          <Link href="/" className="flex items-center gap-2">
+  <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-bg-base">
+      <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
+      <path d="M12 22V12" />
+      <path d="M4 7l8 5 8-5" />
+    </svg>
+  </div>
+  <span className="font-mono font-medium text-lg tracking-tight">RouteFlow</span>
+</Link>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={handleAuthNavigation}>Iniciar sesión</Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push(hasSession ? "/dashboard" : "/login")}>Iniciar sesión</Button>
             <Button variant="primary" size="sm" onClick={handleAuthNavigation}>Empezar gratis</Button>
           </div>
         </div>
@@ -177,26 +176,29 @@ export default function LandingPage() {
               routes={15}
               usedRoutes={0}
               features={["15 rutas por mes", "Exportar a Google Maps", "Soporte por email"]}
+              onSelectPlan={() => router.push("/login?mode=register")}
             />
 
             {/* Pro */}
-            <PricingCard
-              name="Pro"
-              price={25}
-              routes={40}
-              usedRoutes={0}
-              highlighted
-              features={["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"]}
-            />
+<PricingCard
+  name="Pro"
+  price={25}
+  routes={40}
+  usedRoutes={0}
+  highlighted
+  features={["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"]}
+  onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=pro" : "/login?plan=pro&mode=register")}
+/>
 
-            {/* Business */}
-            <PricingCard
-              name="Business"
-              price={60}
-              routes={120}
-              usedRoutes={0}
-              features={["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"]}
-            />
+{/* Business */}
+<PricingCard
+  name="Business"
+  price={60}
+  routes={120}
+  usedRoutes={0}
+  features={["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"]}
+  onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=business" : "/login?plan=business&mode=register")}
+/>
           </div>
         </div>
       </section>
@@ -291,14 +293,14 @@ export default function LandingPage() {
       <footer className="py-8 border-t border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <div className="w-6 h-6 rounded bg-accent flex items-center justify-center">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-bg-base">
                   <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
                 </svg>
               </div>
               <span className="font-mono text-sm text-text-muted">RouteFlow</span>
-            </div>
+            </Link>
             <div className="flex items-center gap-6 text-sm text-text-muted">
               <a href="#" className="hover:text-text-primary transition-colors duration-150">Términos</a>
               <a href="#" className="hover:text-text-primary transition-colors duration-150">Privacidad</a>
@@ -320,6 +322,7 @@ function PricingCard({
   usedRoutes,
   features,
   highlighted = false,
+  onSelectPlan,
 }: {
   name: string;
   price: number;
@@ -327,6 +330,7 @@ function PricingCard({
   usedRoutes: number;
   features: string[];
   highlighted?: boolean;
+  onSelectPlan: () => void;
 }) {
   const percentage = (usedRoutes / routes) * 100;
 
@@ -379,7 +383,7 @@ function PricingCard({
         ))}
       </ul>
 
-      <Button variant={highlighted ? "primary" : "ghost"} className="w-full">
+      <Button variant={highlighted ? "primary" : "ghost"} className="w-full" onClick={onSelectPlan}>
         Elegir plan
       </Button>
     </Card>

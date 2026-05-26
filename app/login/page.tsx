@@ -96,7 +96,7 @@ const [supabase, setSupabase] = useState<any>(null);
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback${hasPlan ? `?plan=${plan}` : ""}`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?plan=${plan ?? ""}`
           },
         });
         if (signUpError) throw signUpError;

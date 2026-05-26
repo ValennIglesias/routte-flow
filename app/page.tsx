@@ -48,7 +48,7 @@ export default function LandingPage() {
             <span className="font-mono font-medium text-lg tracking-tight">RouteFlow</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={handleAuthNavigation}>Iniciar sesión</Button>
+            <Button variant="ghost" size="sm" onClick={() => router.push(hasSession ? "/dashboard" : "/login")}>Iniciar sesión</Button>
             <Button variant="primary" size="sm" onClick={handleAuthNavigation}>Empezar gratis</Button>
           </div>
         </div>
@@ -174,7 +174,7 @@ export default function LandingPage() {
               routes={15}
               usedRoutes={0}
               features={["15 rutas por mes", "Exportar a Google Maps", "Soporte por email"]}
-              onSelectPlan={() => router.push("/login")}
+              onSelectPlan={() => router.push("/login?mode=register")}
             />
 
             {/* Pro */}

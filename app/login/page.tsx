@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 type AuthMode = "login" | "register";
 
@@ -117,13 +118,13 @@ const [supabase, setSupabase] = useState<any>(null);
       <div className="flex flex-col items-center gap-6 w-full max-w-xs">
         {/* Logo */}
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
+          <Link href="/" className="flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-bg-base">
               <path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" />
               <path d="M12 22V12" />
               <path d="M4 7l8 5 8-5" />
             </svg>
-          </div>
+          </Link>
           <div className="text-center">
             <h1 className="text-xl font-semibold text-text-primary">RouteFlow</h1>
             <p className="text-sm text-text-muted mt-0.5">

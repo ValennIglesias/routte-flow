@@ -107,6 +107,9 @@ const [supabase, setSupabase] = useState<any>(null);
     password,
   });
   if (signInError) throw signInError;
+
+  // Pequeño delay para asegurar que la sesión esté lista
+  await new Promise(resolve => setTimeout(resolve, 500));
   
   router.push(postAuthRedirect);
 }

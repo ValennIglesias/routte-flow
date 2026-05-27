@@ -99,16 +99,16 @@ export async function POST(request: NextRequest) {
 
     // Normalize column names to lowercase and trim
     rows = raw.map((row) => {
-      const normalized: Record<string, string> = {};
-      for (const key of Object.keys(row)) {
-        normalized[key.trim().toLowerCase()] = String(row[key]).trim();
-      }
-      return {
-        direccion: normalized["direccion"] ?? "",
-        localidad: normalized["localidad"] ?? "",
-        zona: normalized["zona"] ?? "",
-      };
-    });
+  const normalized: Record<string, string> = {};
+  for (const key of Object.keys(row)) {
+    normalized[key.trim().toLowerCase()] = String(row[key]).trim();
+  }
+  return {
+    direccion: normalized["direccion"] ?? "",
+    localidad: normalized["localidad"] ?? "",
+    zona: zone, // usar el parámetro del formulario
+  };
+});
   } catch {
     return NextResponse.json(
       { error: "No se pudo parsear el archivo. Verificá que tenga el formato correcto." },
@@ -117,9 +117,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Filter by zone
-  const filtered = rows.filter(
-    (row) => row.zona.toLowerCase() === zone.toLowerCase() && row.direccion
-  );
+  const filtered = rows.filter((row) => row.direccion);
 
   if (filtered.length === 0) {
     return NextResponse.json(

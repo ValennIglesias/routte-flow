@@ -102,8 +102,8 @@ export default function LandingPage() {
       <section className="py-20 sm:py-28 border-t border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
-            <span className="font-mono text-xs text-accent uppercase tracking-widest">Cómo funciona</span>
-            <h2 className="font-sans text-3xl sm:text-4xl font-bold mt-3 text-balance">Tres pasos. Sin complicaciones.</h2>
+            <span className="font-mono text-xs text-accent uppercase tracking-widest">Cómo funciona?</span>
+            <h2 className="font-sans text-3xl sm:text-4xl font-bold mt-3 text-balance">Tres simples pasos. Sin complicaciones.</h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

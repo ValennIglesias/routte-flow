@@ -483,17 +483,6 @@ export default function ConfiguracionPage() {
                     </div>
                   </div>
                 </CardBody>
-                <CardFooter className="justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSignOut}
-                    loading={isSigningOut}
-                    disabled={isSigningOut}
-                  >
-                    Cerrar sesión
-                  </Button>
-                </CardFooter>
               </Card>
 
               {/* Plan card */}

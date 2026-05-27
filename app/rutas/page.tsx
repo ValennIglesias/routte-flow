@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+
 
 // ---- Icons ----
 
@@ -118,18 +120,21 @@ function getPeriodDateRange(period: string): { start: Date | null; end: Date | n
 function EmptyState() {
   return (
     <Card padding="lg">
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <span className="text-text-muted mb-4">
-          <IconEmpty />
-        </span>
-        <h3 className="text-base font-medium text-text-primary mb-1">
-          Sin rutas todavía
-        </h3>
-        <p className="text-sm text-text-muted max-w-xs">
-          Cuando crees tu primera ruta optimizada, aparecerá acá.
-        </p>
-      </div>
-    </Card>
+  <div className="flex flex-col items-center justify-center py-12 text-center">
+    <Link 
+      href="/dashboard"
+      className="text-text-muted/50 hover:text-accent transition-colors mb-4"
+    >
+      <IconEmpty />
+    </Link>
+    <h3 className="text-base font-medium text-text-primary mb-1">
+      Sin rutas todavía
+    </h3>
+    <p className="text-sm text-text-muted max-w-xs">
+      Cuando crees tu primera ruta optimizada, aparecerá acá.
+    </p>
+  </div>
+</Card>
   );
 }
 
@@ -235,7 +240,6 @@ export default function RutasPage() {
                 options={zoneFilterOptions}
                 value={zoneFilter}
                 onChange={(e) => setZoneFilter(e.target.value)}
-                placeholder="Todas las zonas"
               />
             </div>
             <div className="w-full sm:w-48">

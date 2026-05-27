@@ -92,20 +92,24 @@ const [supabase, setSupabase] = useState<any>(null);
         if (signInError) throw signInError;
         router.push(postAuthRedirect);
       } else {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?plan=${plan ?? ""}`
-          },
-        });
-        if (signUpError) throw signUpError;
-        // Show confirmation message
-        setError(null);
-        setMode("login");
-        // Redirect immediately if email confirmation is disabled in Supabase
-        router.push(postAuthRedirect);
-      }
+  const { error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/auth/callback?plan=${plan ?? ""}`
+    },
+  });
+  if (signUpError) throw signUpError;
+  
+  // Auto login después del registro
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (signInError) throw signInError;
+  
+  router.push(postAuthRedirect);
+}
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error de autenticación");
     } finally {

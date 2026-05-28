@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ init_point: response.init_point });
-  } catch (err) {
-    console.error("[crear] MP error:", err);
+  } catch (err: any) {
+    console.error("[crear] MP error:", JSON.stringify(err?.cause ?? err));
     return NextResponse.json(
       { error: "Error al crear la suscripción en Mercado Pago" },
       { status: 500 }

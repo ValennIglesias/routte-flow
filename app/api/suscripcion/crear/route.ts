@@ -47,11 +47,6 @@ export async function POST(request: NextRequest) {
         reason: plan.label,
         external_reference: user.id,
         back_url: `${origin}/dashboard`,
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: "months",
-          currency_id: "ARS",
-        },
       } as any,
     });
 

@@ -3,8 +3,9 @@ import MercadoPagoConfig, { PreApprovalPlan } from "mercadopago";
 import { createClient } from "@/lib/supabase/server";
 
 const PLANS: Record<string, { label: string; amount: number }> = {
-  pro:      { label: "Plan Pro",      amount: 25000 },
-  business: { label: "Plan Business", amount: 60000 },
+  basic:    { label: "Plan Basic",    amount: 15000 },
+  pro:      { label: "Plan Pro",      amount: 40000 },
+  business: { label: "Plan Business", amount: 90000 },
 };
 
 export async function POST(request: NextRequest) {
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (!plan_id || !PLANS[plan_id]) {
       return NextResponse.json(
-        { error: "plan_id inválido. Valores permitidos: pro, business." },
+        { error: "plan_id inválido. Valores permitidos: basic, pro, business." },
         { status: 400 }
       );
     }

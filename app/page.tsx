@@ -168,37 +168,64 @@ export default function LandingPage() {
             <p className="text-text-muted mt-3">Pagás solo por lo que usás. Sin contratos.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Starter */}
             <PricingCard
               name="Starter"
-              price={10}
-              routes={15}
+              price={null}
+              routes={10}
               usedRoutes={0}
-              features={["15 rutas por mes", "Exportar a Google Maps", "Soporte por email"]}
+              features={["10 rutas gratis", "1 depósito", "Exportar a Google Maps", "Soporte por email"]}
+              ctaLabel="Empezar gratis"
               onSelectPlan={() => router.push("/login?mode=register")}
             />
 
-            {/* Pro */}
-<PricingCard
-  name="Pro"
-  price={25}
-  routes={40}
-  usedRoutes={0}
-  highlighted
-  features={["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"]}
-  onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=pro" : "/login?plan=pro&mode=register")}
-/>
+            {/* Basic */}
+            <PricingCard
+              name="Basic"
+              price={15000}
+              routes={35}
+              usedRoutes={0}
+              features={["35 rutas por mes", "1 depósito", "Exportar a Google Maps", "Soporte por email"]}
+              onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=basic" : "/login?plan=basic&mode=register")}
+            />
 
-{/* Business */}
-<PricingCard
-  name="Business"
-  price={60}
-  routes={120}
-  usedRoutes={0}
-  features={["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"]}
-  onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=business" : "/login?plan=business&mode=register")}
-/>
+            {/* Pro */}
+            <PricingCard
+              name="Pro"
+              price={40000}
+              routes={80}
+              usedRoutes={0}
+              highlighted
+              features={["80 rutas por mes", "3 depósitos", "App para chofer", "Historial de rutas", "Soporte prioritario"]}
+              onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=pro" : "/login?plan=pro&mode=register")}
+            />
+
+            {/* Business */}
+            <PricingCard
+              name="Business"
+              price={90000}
+              routes={200}
+              usedRoutes={0}
+              features={["200 rutas por mes", "5 depósitos", "Múltiples usuarios", "API access", "Soporte dedicado"]}
+              onSelectPlan={() => router.push(hasSession ? "/onboarding/confirmar-plan?plan=business" : "/login?plan=business&mode=register")}
+            />
+          </div>
+
+          {/* Enterprise */}
+          <div className="mt-6 rounded-xl border border-border bg-bg-card p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <span className="font-mono text-xs text-text-muted uppercase tracking-widest">Enterprise</span>
+              <p className="text-lg font-semibold text-text-primary mt-1">Rutas a medida · Depósitos a medida</p>
+              <p className="text-sm text-text-muted mt-1">SLA dedicado, onboarding personalizado y precio a consultar.</p>
+            </div>
+            <Button
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => { window.location.href = "mailto:valen.iglesias3@gmail.com?subject=Plan Enterprise RouteFlow"; }}
+            >
+              Contactar
+            </Button>
           </div>
         </div>
       </section>
@@ -226,7 +253,7 @@ export default function LandingPage() {
               <tbody>
                 <tr className="border-b border-border/50">
                   <td className="py-4 px-4 text-text-muted">Precio por ruta</td>
-                  <td className="py-4 px-4 text-center font-semibold text-accent">$0.67</td>
+                  <td className="py-4 px-4 text-center font-semibold text-accent">desde $429</td>
                   <td className="py-4 px-4 text-center text-text-muted">$2.50</td>
                   <td className="py-4 px-4 text-center text-text-muted">$1.80</td>
                 </tr>
@@ -322,14 +349,16 @@ function PricingCard({
   usedRoutes,
   features,
   highlighted = false,
+  ctaLabel = "Elegir plan",
   onSelectPlan,
 }: {
   name: string;
-  price: number;
+  price: number | null;
   routes: number;
   usedRoutes: number;
   features: string[];
   highlighted?: boolean;
+  ctaLabel?: string;
   onSelectPlan: () => void;
 }) {
   const percentage = (usedRoutes / routes) * 100;
@@ -353,8 +382,14 @@ function PricingCard({
       <div className="mb-6">
         <h3 className="font-mono text-sm uppercase tracking-wider text-text-muted mb-2">{name}</h3>
         <div className="flex items-baseline gap-1">
-          <span className="text-4xl font-bold">${price}</span>
-          <span className="text-text-muted text-sm">USD / mes</span>
+          {price === null ? (
+            <span className="text-4xl font-bold">Gratis</span>
+          ) : (
+            <>
+              <span className="text-4xl font-bold">${price.toLocaleString("es-AR")}</span>
+              <span className="text-text-muted text-sm">ARS / mes</span>
+            </>
+          )}
         </div>
       </div>
 
@@ -384,7 +419,7 @@ function PricingCard({
       </ul>
 
       <Button variant={highlighted ? "primary" : "ghost"} className="w-full" onClick={onSelectPlan}>
-        Elegir plan
+        {ctaLabel}
       </Button>
     </Card>
   );

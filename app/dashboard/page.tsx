@@ -123,8 +123,9 @@ function DepotSelector({ onDepotChange, currentPlan }: DepotSelectorProps) {
 
   const DEPOT_LIMITS: Record<string, number> = {
     starter: 1,
+    basic: 1,
     pro: 3,
-    business: 10,
+    business: 5,
   };
   const depotLimit = DEPOT_LIMITS[currentPlan] ?? 1;
   
@@ -488,13 +489,14 @@ function Dropzone({ file, onFileSelect }: DropzoneProps) {
 // ---- Credits widget ----
 
 const PLAN_LIMITS: Record<string, number> = {
-  starter: 15,
-  pro: 40,
-  business: 120,
+  starter: 10,
+  basic: 35,
+  pro: 80,
+  business: 200,
 };
 
 
-type PlanType = "starter" | "pro" | "business";
+type PlanType = "starter" | "basic" | "pro" | "business";
 
 interface CreditsWidgetProps {
   used: number;
@@ -554,7 +556,7 @@ function PlansModal({ currentPlan, onClose }: PlansModalProps) {
   const [loadingPlan, setLoadingPlan] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
-  const handleSelectPlan = async (planId: "pro" | "business") => {
+  const handleSelectPlan = async (planId: "basic" | "pro" | "business") => {
     setLoadingPlan(planId);
     setError(null);
 
@@ -587,23 +589,30 @@ function PlansModal({ currentPlan, onClose }: PlansModalProps) {
       id: "starter" as const,
       name: "Starter",
       price: 0,
-      routes: 15,
-      features: ["15 rutas por mes", "Exportar a Google Maps", "Soporte por email"],
+      routes: 10,
+      features: ["10 rutas gratis", "1 depósito", "Exportar a Google Maps", "Soporte por email"],
+    },
+    {
+      id: "basic" as const,
+      name: "Basic",
+      price: 15000,
+      routes: 35,
+      features: ["35 rutas por mes", "1 depósito", "Exportar a Google Maps", "Soporte por email"],
     },
     {
       id: "pro" as const,
       name: "Pro",
-      price: 25000,
-      routes: 40,
+      price: 40000,
+      routes: 80,
       highlighted: true,
-      features: ["40 rutas por mes", "App para chofer", "Historial de rutas", "Soporte prioritario"],
+      features: ["80 rutas por mes", "3 depósitos", "App para chofer", "Historial de rutas", "Soporte prioritario"],
     },
     {
       id: "business" as const,
       name: "Business",
-      price: 60000,
-      routes: 120,
-      features: ["120 rutas por mes", "Múltiples usuarios", "API access", "Soporte dedicado"],
+      price: 90000,
+      routes: 200,
+      features: ["200 rutas por mes", "5 depósitos", "Múltiples usuarios", "API access", "Soporte dedicado"],
     },
   ];
 
@@ -615,7 +624,7 @@ function PlansModal({ currentPlan, onClose }: PlansModalProps) {
       aria-label="Elegir plan"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-full max-w-4xl rounded-xl border border-border bg-bg-base shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-5xl rounded-xl border border-border bg-bg-base shadow-xl p-6 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -638,8 +647,7 @@ function PlansModal({ currentPlan, onClose }: PlansModalProps) {
           </div>
         )}
 
-        {/* Plans grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map((plan) => {
             const isCurrent = plan.id === currentPlan;
             const isLoading = loadingPlan === plan.id;
@@ -710,7 +718,7 @@ function PlansModal({ currentPlan, onClose }: PlansModalProps) {
                   <Button
                     variant={plan.highlighted ? "primary" : "ghost"}
                     className="w-full"
-                    onClick={() => handleSelectPlan(plan.id)}
+                    onClick={() => handleSelectPlan(plan.id as "basic" | "pro" | "business")}
                     loading={isLoading}
                     disabled={isCurrent || isLoading || loadingPlan !== null}
                   >
@@ -720,6 +728,23 @@ function PlansModal({ currentPlan, onClose }: PlansModalProps) {
               </Card>
             );
           })}
+        </div>
+
+        {/* Enterprise card */}
+        <div className="mt-4 rounded-lg border border-border bg-bg-card p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <span className="font-mono text-xs text-text-muted uppercase tracking-wider">Enterprise</span>
+            <p className="text-sm text-text-primary font-semibold mt-1">Rutas a medida · Depósitos a medida</p>
+            <p className="text-xs text-text-muted mt-1">SLA dedicado, onboarding personalizado y precio a consultar.</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            onClick={() => { window.location.href = "mailto:valen.iglesias3@gmail.com?subject=Plan Enterprise RouteFlow"; }}
+          >
+            Contactar
+          </Button>
         </div>
 
         {/* Close button */}

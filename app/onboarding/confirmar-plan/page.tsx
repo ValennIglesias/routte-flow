@@ -9,7 +9,7 @@ import { Suspense } from "react";
 
 // ---- Types ----
 
-type PlanId = "pro" | "business";
+type PlanId = "basic" | "pro" | "business";
 
 interface PlanDetails {
   id: PlanId;
@@ -23,14 +23,27 @@ interface PlanDetails {
 // ---- Plan data ----
 
 const PLANS: Record<PlanId, PlanDetails> = {
+  basic: {
+    id: "basic",
+    name: "Basic",
+    price: 15000,
+    routes: 35,
+    features: [
+      "35 rutas por mes",
+      "1 depósito",
+      "Exportar a Google Maps",
+      "Soporte por email",
+    ],
+  },
   pro: {
     id: "pro",
     name: "Pro",
-    price: 25000,
-    routes: 40,
+    price: 40000,
+    routes: 80,
     highlighted: true,
     features: [
-      "40 rutas por mes",
+      "80 rutas por mes",
+      "3 depósitos",
       "App para chofer",
       "Historial de rutas",
       "Soporte prioritario",
@@ -39,10 +52,11 @@ const PLANS: Record<PlanId, PlanDetails> = {
   business: {
     id: "business",
     name: "Business",
-    price: 60000,
-    routes: 120,
+    price: 90000,
+    routes: 200,
     features: [
-      "120 rutas por mes",
+      "200 rutas por mes",
+      "5 depósitos",
       "Múltiples usuarios",
       "API access",
       "Soporte dedicado",
@@ -87,14 +101,14 @@ function ConfirmarPlanContent() {
   const [error, setError] = useState<string | null>(null);
 
   // Validate plan param
-  if (!planParam || (planParam !== "pro" && planParam !== "business")) {
+  if (!planParam || (planParam !== "basic" && planParam !== "pro" && planParam !== "business")) {
     // Use effect-free redirect via render
     if (typeof window !== "undefined") router.replace("/dashboard");
     return null;
   }
 
   const selectedPlan = PLANS[planParam as PlanId];
-  const otherPlanId: PlanId = planParam === "pro" ? "business" : "pro";
+  const otherPlanId: PlanId = planParam === "pro" ? "business" : planParam === "basic" ? "pro" : "basic";
   const otherPlan = PLANS[otherPlanId];
 
   const handleConfirm = async () => {
@@ -310,7 +324,7 @@ function ConfirmarPlanContent() {
                 <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <p className="text-xs text-text-muted leading-relaxed">
-                Podés empezar con el plan Starter gratuito (15 rutas/mes) y mejorar cuando quieras desde el dashboard.
+                Podés empezar con el plan Starter gratuito (10 rutas/mes) y mejorar cuando quieras desde el dashboard.
               </p>
             </div>
           </div>

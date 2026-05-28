@@ -226,9 +226,9 @@ export default function LandingPage() {
               <tbody>
                 <tr className="border-b border-border/50">
                   <td className="py-4 px-4 text-text-muted">Precio por ruta</td>
-                  <td className="py-4 px-4 text-center font-semibold text-accent">$0.67</td>
-                  <td className="py-4 px-4 text-center text-text-muted">$2.50</td>
-                  <td className="py-4 px-4 text-center text-text-muted">$1.80</td>
+                  <td className="py-4 px-4 text-center font-semibold text-accent">$430</td>
+                  <td className="py-4 px-4 text-center text-text-muted">$3500</td>
+                  <td className="py-4 px-4 text-center text-text-muted">$2500</td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="py-4 px-4 text-text-muted">Curva de aprendizaje</td>

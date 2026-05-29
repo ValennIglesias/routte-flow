@@ -59,12 +59,20 @@ export async function POST(request: NextRequest) {
   }
 
   const file = formData.get("file") as File | null;
+  const stopsJson = formData.get("stops") as string | null;
   const zone = formData.get("zone") as string | null;
   const depot = formData.get("depot") as string | null;
 
-  if (!file || !zone || !depot) {
+  if (!zone || !depot) {
     return NextResponse.json(
-      { error: "Faltan campos requeridos: file, zone y depot son obligatorios." },
+      { error: "Faltan campos requeridos: zone y depot son obligatorios." },
+      { status: 400 }
+    );
+  }
+
+  if (!file && !stopsJson) {
+    return NextResponse.json(
+      { error: "Debés subir un archivo o ingresar paradas manualmente." },
       { status: 400 }
     );
   }
@@ -77,55 +85,88 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Validate file extension
-  const fileName = file.name.toLowerCase();
-  if (!fileName.endsWith(".csv") && !fileName.endsWith(".xls") && !fileName.endsWith(".xlsx")) {
-    return NextResponse.json(
-      { error: "El archivo debe ser CSV o Excel (.csv, .xls, .xlsx)." },
-      { status: 400 }
+  // Build rows — either from manual stops JSON or from parsed file
+  let filtered: StopRow[];
+
+  if (stopsJson) {
+    // Manual stops path
+    let manualStops: Array<{ direccion: string; localidad: string }>;
+    try {
+      manualStops = JSON.parse(stopsJson);
+    } catch {
+      return NextResponse.json(
+        { error: "El campo stops no es un JSON válido." },
+        { status: 400 }
+      );
+    }
+
+    if (!Array.isArray(manualStops) || manualStops.length === 0) {
+      return NextResponse.json(
+        { error: "El listado de paradas está vacío." },
+        { status: 400 }
+      );
+    }
+
+    filtered = manualStops.map((s) => ({
+      direccion: String(s.direccion ?? "").trim(),
+      localidad: String(s.localidad ?? "").trim(),
+      zona: zone,
+    })).filter((s) => s.direccion);
+
+    if (filtered.length === 0) {
+      return NextResponse.json(
+        { error: "Ninguna parada tiene una dirección válida." },
+        { status: 400 }
+      );
+    }
+  } else {
+    // File upload path
+    const fileName = file!.name.toLowerCase();
+    if (!fileName.endsWith(".csv") && !fileName.endsWith(".xls") && !fileName.endsWith(".xlsx")) {
+      return NextResponse.json(
+        { error: "El archivo debe ser CSV o Excel (.csv, .xls, .xlsx)." },
+        { status: 400 }
+      );
+    }
+
+    let rows: StopRow[];
+    try {
+      const buffer = await file!.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, {
+        defval: "",
+      });
+
+      rows = raw.map((row) => {
+        const normalized: Record<string, string> = {};
+        for (const key of Object.keys(row)) {
+          normalized[key.trim().toLowerCase()] = String(row[key]).trim();
+        }
+        return {
+          direccion: normalized["direccion"] ?? "",
+          localidad: normalized["localidad"] ?? "",
+          zona: normalized["zona"] ?? "",
+        };
+      });
+    } catch {
+      return NextResponse.json(
+        { error: "No se pudo parsear el archivo. Verificá que tenga el formato correcto." },
+        { status: 400 }
+      );
+    }
+
+    filtered = rows.filter(
+      (row) => row.zona.toLowerCase() === zone.toLowerCase() && row.direccion
     );
-  }
 
-  // Parse Excel/CSV with xlsx
-  let rows: StopRow[];
-  try {
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: "array" });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const raw = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, {
-      defval: "",
-    });
-
-    // Normalize column names to lowercase and trim
-    rows = raw.map((row) => {
-      const normalized: Record<string, string> = {};
-      for (const key of Object.keys(row)) {
-        normalized[key.trim().toLowerCase()] = String(row[key]).trim();
-      }
-      return {
-        direccion: normalized["direccion"] ?? "",
-        localidad: normalized["localidad"] ?? "",
-        zona: normalized["zona"] ?? "",
-      };
-    });
-  } catch {
-    return NextResponse.json(
-      { error: "No se pudo parsear el archivo. Verificá que tenga el formato correcto." },
-      { status: 400 }
-    );
-  }
-
-  // Filter by zone
-  const filtered = rows.filter(
-    (row) => row.zona.toLowerCase() === zone.toLowerCase() && row.direccion
-  );
-
-  if (filtered.length === 0) {
-    return NextResponse.json(
-      { error: `No se encontraron paradas para la zona "${zone}".` },
-      { status: 400 }
-    );
+    if (filtered.length === 0) {
+      return NextResponse.json(
+        { error: `No se encontraron paradas para la zona "${zone}".` },
+        { status: 400 }
+      );
+    }
   }
 
   // Geocode depot

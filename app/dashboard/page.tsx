@@ -1176,7 +1176,14 @@ export default function DashboardPage() {
 
                   {/* Dropzone */}
                   <Dropzone file={file} onFileSelect={setFile} />
-
+{/* Plantilla */}
+<div className="flex justify-end -mt-2">
+  <a href="/plantilla-routeflow.xlsx" download>
+    <Button variant="ghost" size="sm">
+      ↓ Descargar plantilla
+    </Button>
+  </a>
+</div>
                   {/* Form fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Select

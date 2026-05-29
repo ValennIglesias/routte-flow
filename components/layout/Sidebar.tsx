@@ -51,6 +51,16 @@ function IconSettings({ size = 18 }: { size?: number }) {
   );
 }
 
+function IconSupport({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M7.5 7.5a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="10" cy="14.5" r="0.75" fill="currentColor" />
+    </svg>
+  );
+}
+
 function IconCredits({ size = 18 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -82,6 +92,7 @@ const navItems: NavItem[] = [
   { label: "Rutas", href: "/rutas", icon: <IconRoutes /> },
   { label: "Créditos", href: "/creditos", icon: <IconCredits /> },
   { label: "Configuración", href: "/configuracion", icon: <IconSettings /> },
+  { label: "Soporte", href: "/soporte", icon: <IconSupport /> },
 ];
 
 // ---- Sidebar ----

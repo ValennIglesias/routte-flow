@@ -80,9 +80,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: <IconDashboard /> },
   { label: "Rutas", href: "/rutas", icon: <IconRoutes /> },
-  { label: "Historial", href: "/historial", icon: <IconHistory /> },
-  { label: "Configuración", href: "/configuracion", icon: <IconSettings /> },
   { label: "Créditos", href: "/creditos", icon: <IconCredits /> },
+  { label: "Configuración", href: "/configuracion", icon: <IconSettings /> },
 ];
 
 // ---- Sidebar ----

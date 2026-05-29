@@ -1358,7 +1358,6 @@ export default function DashboardPage() {
                   ) : (
                     <ManualStopsForm stops={manualStops} onChange={setManualStops} />
                   )}
-
                   {/* Form fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Select

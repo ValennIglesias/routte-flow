@@ -30,8 +30,8 @@ export default function LandingPage() {
   }, []);
 
   const handleAuthNavigation = () => {
-  router.push(hasSession ? "/dashboard" : "/login?mode=register");
-};
+    router.push(hasSession ? "/dashboard" : "/login?mode=register");
+  };
   
 
   return (
@@ -220,7 +220,7 @@ export default function LandingPage() {
               <p className="text-sm text-text-muted mt-1">SLA dedicado, onboarding personalizado y precio a consultar.</p>
             </div>
             <Button
-              variant="ghost"
+              variant="primary"
               className="shrink-0"
               onClick={() => { window.location.href = "mailto:valen.iglesias3@gmail.com?subject=Plan Enterprise RouteFlow"; }}
             >
@@ -253,9 +253,9 @@ export default function LandingPage() {
               <tbody>
                 <tr className="border-b border-border/50">
                   <td className="py-4 px-4 text-text-muted">Precio por ruta</td>
-                  <td className="py-4 px-4 text-center font-semibold text-accent">desde $429</td>
-                  <td className="py-4 px-4 text-center text-text-muted">$2.50</td>
-                  <td className="py-4 px-4 text-center text-text-muted">$1.80</td>
+                  <td className="py-4 px-4 text-center font-semibold text-accent">$430</td>
+                  <td className="py-4 px-4 text-center text-text-muted">$3.500</td>
+                  <td className="py-4 px-4 text-center text-text-muted">$2.500</td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="py-4 px-4 text-text-muted">Curva de aprendizaje</td>

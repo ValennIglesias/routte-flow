@@ -329,9 +329,9 @@ export default function LandingPage() {
               <span className="font-mono text-sm text-text-muted">RouteFlow</span>
             </Link>
             <div className="flex items-center gap-6 text-sm text-text-muted">
-              <a href="#" className="hover:text-text-primary transition-colors duration-150">Términos</a>
-              <a href="#" className="hover:text-text-primary transition-colors duration-150">Privacidad</a>
-              <a href="#" className="hover:text-text-primary transition-colors duration-150">Contacto</a>
+              <Link href="/terminos" className="hover:text-text-primary transition-colors duration-150">Términos</Link>
+              <Link href="/privacidad" className="hover:text-text-primary transition-colors duration-150">Privacidad</Link>
+              <Link href="/contacto" className="hover:text-text-primary transition-colors duration-150">Contacto</Link>
             </div>
             <span className="text-xs text-text-muted">© 2026 RouteFlow</span>
           </div>

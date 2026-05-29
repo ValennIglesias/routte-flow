@@ -486,6 +486,149 @@ function Dropzone({ file, onFileSelect }: DropzoneProps) {
   );
 }
 
+// ---- ManualStopsForm component ----
+
+const MAX_MANUAL_STOPS = 23;
+
+interface ManualStop {
+  direccion: string;
+  localidad: string;
+}
+
+interface ManualStopsFormProps {
+  stops: ManualStop[];
+  onChange: (stops: ManualStop[]) => void;
+}
+
+function ManualStopsForm({ stops, onChange }: ManualStopsFormProps) {
+  const [direccion, setDireccion] = React.useState("");
+  const [localidad, setLocalidad] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+
+  const handleAdd = () => {
+    const trimDir = direccion.trim();
+    const trimLoc = localidad.trim();
+
+    if (!trimDir) {
+      setError("La dirección no puede estar vacía.");
+      return;
+    }
+    if (!/\d/.test(trimDir)) {
+      setError("La dirección debe incluir una altura numérica (ej: Av. Corrientes 1234).");
+      return;
+    }
+    if (stops.length >= MAX_MANUAL_STOPS) {
+      setError(`Límite máximo de ${MAX_MANUAL_STOPS} paradas alcanzado.`);
+      return;
+    }
+
+    setError(null);
+    onChange([...stops, { direccion: trimDir, localidad: trimLoc }]);
+    setDireccion("");
+    setLocalidad("");
+  };
+
+  const handleRemove = (index: number) => {
+    onChange(stops.filter((_, i) => i !== index));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAdd();
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Input row */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 flex flex-col gap-1">
+          <label className="text-xs font-medium text-text-muted">Dirección</label>
+          <input
+            type="text"
+            value={direccion}
+            onChange={(e) => setDireccion(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Av. Corrientes 1234"
+            className="h-9 rounded-md border border-border bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+          />
+        </div>
+        <div className="flex-1 flex flex-col gap-1">
+          <label className="text-xs font-medium text-text-muted">Localidad</label>
+          <input
+            type="text"
+            value={localidad}
+            onChange={(e) => setLocalidad(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Buenos Aires"
+            className="h-9 rounded-md border border-border bg-bg-surface px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-text-muted select-none">&nbsp;</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleAdd}
+            disabled={stops.length >= MAX_MANUAL_STOPS}
+            className="h-9 shrink-0"
+          >
+            + Agregar parada
+          </Button>
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <p className="text-xs text-danger">{error}</p>
+      )}
+
+      {/* Counter */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-text-muted font-mono">
+          {stops.length} de {MAX_MANUAL_STOPS} paradas
+        </span>
+        {stops.length > 0 && (
+          <button
+            onClick={() => onChange([])}
+            className="text-xs text-text-muted hover:text-danger transition-colors"
+          >
+            Limpiar todo
+          </button>
+        )}
+      </div>
+
+      {/* Stops list */}
+      {stops.length > 0 && (
+        <ol className="flex flex-col gap-2">
+          {stops.map((stop, i) => (
+            <li
+              key={i}
+              className="flex items-center gap-3 rounded-md border border-border bg-bg-surface px-3 py-2"
+            >
+              <span className="font-mono text-xs text-text-muted w-5 shrink-0 text-right">{i + 1}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-text-primary truncate">{stop.direccion}</p>
+                {stop.localidad && (
+                  <p className="text-xs text-text-muted truncate">{stop.localidad}</p>
+                )}
+              </div>
+              <button
+                onClick={() => handleRemove(i)}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-text-muted hover:bg-danger/10 hover:text-danger transition-colors"
+                aria-label={`Eliminar parada ${i + 1}`}
+              >
+                <IconX size={14} />
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 // ---- Credits widget ----
 
 const PLAN_LIMITS: Record<string, number> = {
@@ -868,6 +1011,8 @@ function RoutesTable({ routes, isLoading }: RoutesTableProps) {
 export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [file, setFile] = React.useState<File | null>(null);
+  const [inputMode, setInputMode] = React.useState<"file" | "manual">("file");
+  const [manualStops, setManualStops] = React.useState<Array<{ direccion: string; localidad: string }>>([]);
   const [zone, setZone] = React.useState("");
   const [origin, setOrigin] = React.useState("");
   const [isSigningOut, setIsSigningOut] = React.useState(false);
@@ -1046,11 +1191,13 @@ export default function DashboardPage() {
     }
   };
 
-  const canOptimize = file !== null && zone !== "" && origin !== "" && !isAtLimit;
+  const canOptimize =
+    (inputMode === "file" ? file !== null : manualStops.length > 0) &&
+    zone !== "" && origin !== "" && !isAtLimit;
 
   const handleOptimize = async () => {
-    if (!file || !zone || !origin) {
-      setOptimizeError("Por favor completá todos los campos: archivo, zona y depósito de origen.");
+    if ((inputMode === "file" && !file) || (inputMode === "manual" && manualStops.length === 0) || !zone || !origin) {
+      setOptimizeError("Por favor completá todos los campos: paradas, zona y depósito de origen.");
       return;
     }
 
@@ -1059,9 +1206,14 @@ export default function DashboardPage() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
       formData.append("zone", zone);
       formData.append("depot", origin);
+
+      if (inputMode === "file") {
+        formData.append("file", file!);
+      } else {
+        formData.append("stops", JSON.stringify(manualStops));
+      }
 
       const response = await fetch("/api/optimize-route", {
         method: "POST",
@@ -1174,16 +1326,38 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Dropzone */}
-                  <Dropzone file={file} onFileSelect={setFile} />
-{/* Plantilla */}
-<div className="flex justify-end -mt-2">
-  <a href="/plantilla-routeflow.xlsx" download>
-    <Button variant="ghost" size="sm">
-      ↓ Descargar plantilla
-    </Button>
-  </a>
-</div>
+                  {/* Input mode toggle */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setInputMode("file")}
+                      className={[
+                        "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                        inputMode === "file"
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-border bg-bg-surface text-text-muted hover:text-text-primary",
+                      ].join(" ")}
+                    >
+                      Subir archivo
+                    </button>
+                    <button
+                      onClick={() => setInputMode("manual")}
+                      className={[
+                        "flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                        inputMode === "manual"
+                          ? "border-accent bg-accent/10 text-accent"
+                          : "border-border bg-bg-surface text-text-muted hover:text-text-primary",
+                      ].join(" ")}
+                    >
+                      Cargar manualmente
+                    </button>
+                  </div>
+
+                  {/* File upload or manual form */}
+                  {inputMode === "file" ? (
+                    <Dropzone file={file} onFileSelect={setFile} />
+                  ) : (
+                    <ManualStopsForm stops={manualStops} onChange={setManualStops} />
+                  )}
                   {/* Form fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Select

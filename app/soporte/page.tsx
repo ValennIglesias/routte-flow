@@ -210,7 +210,7 @@ export default function SoportePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-text-muted w-14 shrink-0">Email</span>
-                    <span className="text-sm text-text-primary font-mono">{user.email}</span>
+                    <span className="text-sm text-text-primary truncate max-w-[200px] block">{user.email}</span>
                   </div>
                 </div>
               ) : null}

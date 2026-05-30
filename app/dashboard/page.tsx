@@ -1353,11 +1353,20 @@ export default function DashboardPage() {
                   </div>
 
                   {/* File upload or manual form */}
-                  {inputMode === "file" ? (
-                    <Dropzone file={file} onFileSelect={setFile} />
-                  ) : (
-                    <ManualStopsForm stops={manualStops} onChange={setManualStops} />
-                  )}
+{inputMode === "file" ? (
+  <>
+    <Dropzone file={file} onFileSelect={setFile} />
+    <div className="flex justify-end -mt-2">
+      <a href="/plantilla-routeflow.xlsx" download>
+        <Button variant="ghost" size="sm">
+          ↓ Descargar plantilla
+        </Button>
+      </a>
+    </div>
+  </>
+) : (
+  <ManualStopsForm stops={manualStops} onChange={setManualStops} />
+)}
                   {/* Form fields */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Select
